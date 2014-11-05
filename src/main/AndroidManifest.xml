@@ -1,0 +1,81 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    package="de.mine.experiments" >
+
+    <uses-sdk
+        android:minSdkVersion="L"
+        android:targetSdkVersion="L" />
+
+    <application
+        android:allowBackup="true"
+        android:icon="@drawable/ic_launcher"
+        android:label="Experiments"
+        android:theme="@style/AppTheme" >
+        <activity
+            android:name=".fragments.MyActivity1"
+            android:label="@string/title_activity_my_activity1" >
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+        <activity
+            android:name=".anim.viewswaps.ViewAnimatorActivity2"
+            android:label="@string/title_activity_view_animator" >
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+        <activity
+            android:name=".anim.viewswaps.ViewSwitcherActivity2"
+            android:label="@string/title_activity_view_switcher_activity2" >
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+        <activity
+            android:name=".anim.viewswaps.ViewFlipperActivity2"
+            android:label="@string/title_activity_view_flipper_activity2" >
+        </activity>
+        <activity
+            android:name=".anim.layoutchange.LayoutChangesActivity5"
+            android:label="@string/title_activity_view_animations_activity4" >
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+        <activity
+            android:name=".anim.viewpager.ViewPagerActivity3"
+            android:label="@string/title_activity_view_pager_activity3" >
+        </activity>
+        <activity
+            android:name=".viewanimations.ViewAnimationsActivity4"
+            android:label="@string/title_activity_view_animations_activity4" >
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+        <activity
+            android:name=".anim.layoutchange.LayoutTransitionsActivity"
+            android:label="@string/title_activity_layout_transitions" >
+        </activity>
+        <activity
+            android:name=".anim.layoutchange.LayoutTransitionsActivity5"
+            android:label="@string/title_activity_layout_transitions_activity5" >
+        </activity>
+        <activity
+            android:name=".anim.animatedgroup.ViewGroupAnimatedActivity6"
+            android:label="@string/title_activity_view_group_animated_activity6" >
+        </activity>
+    </application>
+
+</manifest>

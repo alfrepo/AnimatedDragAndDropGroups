@@ -1,0 +1,17 @@
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    tools:context=".viewpager.Fragment3ScreenSlider">
+
+    <!-- TODO: Update blank fragment layout -->
+    <TextView
+        android:text="Text"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:id="@+id/textView"
+        android:background="#fffffd7d"
+        android:gravity="center_vertical|center_horizontal"
+        android:textSize="@android:dimen/notification_large_icon_height" />
+
+</FrameLayout>
