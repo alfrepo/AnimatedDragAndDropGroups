@@ -5,18 +5,15 @@ import android.animation.AnimatorListenerAdapter;
 import android.animation.ValueAnimator;
 import android.content.Context;
 import android.graphics.Color;
-import android.graphics.Point;
 import android.util.AttributeSet;
 import android.util.Log;
 import android.view.DragEvent;
 import android.view.View;
 import android.view.ViewGroup;
-import android.view.ViewParent;
 
 import java.util.ArrayList;
 import java.util.List;
 
-import de.mine.experiments.anim.animatedgroup.command.Command;
 import de.mine.experiments.anim.animatedgroup.command.CommandGrowView;
 
 /**
@@ -47,8 +44,13 @@ public class ViewGroupAnimated extends ViewGroup implements AbstractViewGroup {
     private ViewDummyAnimated placeholderInsider = null;
     CommandGrowView placeholderInsiderCommandGrowView; // command which is used to animate the dummy
 
-
     private Context context;
+
+
+    // REPLACEMENT
+    AnimatorOfDummy animatorOfDummyInsider;
+    AnimatorOfDummy animatorOfDummyFollower;
+
 
     public ViewGroupAnimated(Context context) {
         super(context);
@@ -69,6 +71,9 @@ public class ViewGroupAnimated extends ViewGroup implements AbstractViewGroup {
     private void init(Context context){
         this.context = context;
 
+        // dummy insider
+        this.animatorOfDummyInsider = new AnimatorOfDummy(context, this);
+
         setMinimumHeight(minHeight);
         setMinimumWidth(minWidth);
 
@@ -79,7 +84,11 @@ public class ViewGroupAnimated extends ViewGroup implements AbstractViewGroup {
 
         // listeners will be triggered on drag
         setUpDragListeners();
+
+
     }
+
+
 
     private void setRandomBg(){
         int r = ((int) (Math.random()*255)) ;
@@ -200,6 +209,8 @@ public class ViewGroupAnimated extends ViewGroup implements AbstractViewGroup {
 
     private View viewDummyAnimatedOnDrag = null;
 
+    /*  This enables dummy animation on drag in.
+        Drop is NOT handled by the Group - it is handled by the dummy itself.     */
     private void setUpDragListeners(){
         this.setOnDragListener(new OnDragListener() {
             @Override
@@ -216,56 +227,46 @@ public class ViewGroupAnimated extends ViewGroup implements AbstractViewGroup {
         });
     }
 
+    /**
+     * MOVE!
+     * Animates the dummies, when the dragShadow is moved into the group.
+     * Creates the dummy if necessary,
+     * adds the dummy to the parent at position x,
+     * removes the view, when animation ends,
+     *
+     */
     private void onDragInAddDummyAnimation(){
-        // create the dummy command if they are null
-        boolean wasJustInitiatedFollower = this.initiatePlaceholderFollowerDummyAndCommand();
-        boolean wasJustInitiatedInsider = this.initiatePlaceholderInsiderDummyAndCommand();
+        initializeFollowerDummyOnNewDummy();
+        this.animatorOfDummyInsider.onDragInAddDummyAnimation(0);
 
+        int index = getViewIndexInParent((ViewGroup)getParent());
+        this.animatorOfDummyFollower.onDragInAddDummyAnimation(index+1);
+    }
 
-        /*  add the dummy to the group.
-            It will be removed from the group when the undo animation finishes
-            prepend the follower at the very first positon        */
-        if(placeholderInsider.getParent() == null){
-            this.addView(placeholderInsider, 0);
+    /**
+     * Since there is no way to check, when the current view is attached to a new parent
+     * we will check for a new parent on every drag in.
+     * This method will reinitialize
+     */
+    private void initializeFollowerDummyOnNewDummy(){
+        if(getParent() != null){
+
+            // dummy does not exist yet
+            if(animatorOfDummyFollower == null){
+                animatorOfDummyFollower = new AnimatorOfDummy(context, (ViewGroup)getParent());
+            }
+
+            // dummy not empty but has wrong parent
+            if(animatorOfDummyFollower != null && (animatorOfDummyFollower.getParentOfDummy() != getParent())){
+                animatorOfDummyFollower.destroy();
+            }
         }
+    }
 
-        if(ViewGroupAnimated.this.getParent() != null && ViewGroupAnimated.this.getParent() instanceof ViewGroup && placeholderFollower.getParent()==null){
-            ViewGroup parent = (ViewGroup) ViewGroupAnimated.this.getParent();
-            // append the follower directly after this View in parent
-            // get the index of the current view
-            int indexOfCurrentView = getViewIndexInParent(parent);
-            // add the dummy as next
-            parent.addView(placeholderFollower, indexOfCurrentView+1);
-        }
-
-        // remove the dummies on animation undo hook
-        if(wasJustInitiatedFollower){
-            // when the command is reverted - the viewDummy should be removed from the group
-            placeholderFollowerCommandGrowView.addOnUndoFinishedListener(new Command.ListenerCommand() {
-                @Override
-                public void onTrigger() {
-                    ViewParent parent = ViewGroupAnimated.this.getParent();
-                    if (parent instanceof ViewGroup) {
-                        ((ViewGroup) parent).removeView(placeholderFollower);
-                    }
-                }
-            });
-        }
-
-        // remove the dummies on animation undo hook
-        if(wasJustInitiatedInsider){
-            // when the command is reverted - the viewDummy should be removed from the group
-            placeholderInsiderCommandGrowView.addOnUndoFinishedListener(new Command.ListenerCommand() {
-                @Override
-                public void onTrigger() {
-                    ViewGroupAnimated.this.removeView(placeholderInsider);
-                }
-            });
-        }
-
-        // animate the addition of the view
-        placeholderInsiderCommandGrowView.execute();
-        placeholderFollowerCommandGrowView.execute();
+    // start resizing shrinking the view slowly
+    private void onDragOutRemoveDummyAnimation(){
+        this.animatorOfDummyInsider.onDragOutRemoveDummyAnimation();
+        this.animatorOfDummyFollower.onDragOutRemoveDummyAnimation();
     }
 
     private int getViewIndexInParent(ViewGroup parent) {
@@ -277,16 +278,6 @@ public class ViewGroupAnimated extends ViewGroup implements AbstractViewGroup {
         throw new IllegalStateException("Failed to retrieve the index of the view");
     }
 
-    // start resizing shrinking the view slowly
-    private void onDragOutRemoveDummyAnimation(){
-        if(placeholderFollowerCommandGrowView != null){
-            placeholderFollowerCommandGrowView.undo();
-        }
-
-        if(placeholderInsiderCommandGrowView != null){
-            placeholderInsiderCommandGrowView.undo();
-        }
-    }
 
     // should be inside the dummy
     private void onDropInReplaceDummyAndStopCommand(){
@@ -304,65 +295,6 @@ public class ViewGroupAnimated extends ViewGroup implements AbstractViewGroup {
     }
 
 
-// EXPERIMENT animation
-
-    private boolean initiatePlaceholderInsiderDummyAndCommand(){
-        // create the command if necessary
-        if(placeholderInsiderCommandGrowView == null){
-
-            // create a dummy
-            placeholderInsider = createADummy(INITIAL_DUMMY_HEIGHT_BEFORE_EXPANDING);
-
-            // create the command
-            placeholderInsiderCommandGrowView = new CommandGrowView(placeholderInsider, INITIAL_DUMMY_HEIGHT_BEFORE_EXPANDING, dummyHeight, dummyAnimationDuration);
-
-            return true;
-        }
-        return false;
-    }
-
-    private boolean initiatePlaceholderFollowerDummyAndCommand(){
-        // create the command if necessary
-        if(placeholderFollowerCommandGrowView == null){
-
-            // create a dummy
-            placeholderFollower = createADummy(INITIAL_DUMMY_HEIGHT_BEFORE_EXPANDING);
-
-            // create the command
-            placeholderFollowerCommandGrowView = new CommandGrowView(placeholderFollower, INITIAL_DUMMY_HEIGHT_BEFORE_EXPANDING, dummyHeight, dummyAnimationDuration);
-
-            return true;
-        }
-
-        return false;
-    }
-
-    private ViewDummyAnimated createADummy(int initialDummyHeight) {
-        ViewDummyAnimated dummy  = new ViewDummyAnimated(context);
-        int itemDummyWidth = measureHowLargeTheViewWouldBeAsChild(dummy, initialDummyHeight).x;
-
-        // initial lp to avoid nullPointerException
-        // assign the height of 0 to the dummy. WIll expand it soon
-        LayoutParams lp = new LayoutParams(itemDummyWidth, initialDummyHeight);
-        dummy.setLayoutParams(lp);
-
-        return dummy;
-    }
-
-    public Point measureHowLargeTheViewWouldBeAsChild(View child, int exactHeightAdvice){
-        // retrieve the measure specs width / height . Use matchparent / unspecified
-            // provide infos how the this view as parent wants to see the child
-            int measureSpecWidth = MeasureSpec.makeMeasureSpec(getMeasuredWidth(), MeasureSpec.AT_MOST);
-            int measureSpecHeight = MeasureSpec.makeMeasureSpec(exactHeightAdvice ,MeasureSpec.EXACTLY);
-            // provide infos how the child wants to lay out itselfe (normally via xml)
-            LayoutParams lpChild = new LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.WRAP_CONTENT);
-            child.setLayoutParams(lpChild);
-            // measure the child
-            child.measure(measureSpecWidth, measureSpecHeight);
-            final int childWidth = child.getMeasuredWidth();
-            final int childHeight = child.getMeasuredHeight();
-        return new Point(childWidth, childHeight);
-    }
 
     public void addViewAnimated(final View child) {
         // measure the child as x height.
@@ -412,60 +344,8 @@ public class ViewGroupAnimated extends ViewGroup implements AbstractViewGroup {
             va.start();
     }
 
-//    // EXPERIMENT animation
-//    public void addViewAnimated(final View child) {
-//        // measure the child as x height.
-//
-//        // retrieve the measure specs width / height . Use matchparent / unspecified
-//            // provide infos how the this view as parent wants to see the child
-//            int measureSpecWidth = MeasureSpec.makeMeasureSpec(getMeasuredWidth() ,MeasureSpec.AT_MOST);
-//            int measureSpecHeight = MeasureSpec.makeMeasureSpec(0 ,MeasureSpec.EXACTLY);
-//            // provide infos how the child wants to lay out itselfe (normally via xml)
-//            LayoutParams lpChild = new LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.WRAP_CONTENT);
-//            child.setLayoutParams(lpChild);
-//            // measure the child
-//            child.measure(measureSpecWidth, measureSpecHeight);
-//            final int childWidth = child.getMeasuredWidth();
-//            final int childHeight = child.getMeasuredHeight();
-//
-//
-//        // add dummy with height 0
-//            final ViewDummyAnimated itemDummy = new ViewDummyAnimated(context);
-//            // initial lp to avoid nullPointerException
-//            // assign the height of 0 to the dummy. WIll expand it soon
-//            LayoutParams lp = new LayoutParams(childWidth, 0);
-//            itemDummy.setLayoutParams(lp);
-//            addView(itemDummy);
-//
-//        // animate dummy height from 0 to childHeight
-//            ValueAnimator va = ValueAnimator.ofInt(0, childHeight);
-//            va.setDuration(200);
-//            va.addUpdateListener(new ValueAnimator.AnimatorUpdateListener() {
-//                public void onAnimationUpdate(ValueAnimator animation) {
-//                    Integer value = (Integer) animation.getAnimatedValue();
-//                    itemDummy.getLayoutParams().height = value.intValue();
-//                    itemDummy.requestLayout();
-//                }
-//            });
-//
-//            va.addListener(new AnimatorListenerAdapter() {
-//                           @Override
-//                           public void onAnimationEnd(Animator animation) {
-//                               // replace dummy by child. use attachLayoutAnimationParameters, detachViewFromParent
-//                               LayoutParams layoutParamsChild = child.getLayoutParams();
-//                               int index = indexOfChild(itemDummy);
-//                               detachViewFromParent(itemDummy);
-//                               attachViewToParent(child,index, layoutParamsChild);
-//                               child.requestLayout();
-//                           }
-//            });
-//            va.start();
-//    }
-
-
 
     // INTERFACES
-
 
     @Override
     public List<AbstractFigure> getChildren() {
@@ -487,4 +367,6 @@ public class ViewGroupAnimated extends ViewGroup implements AbstractViewGroup {
     public void replace(AbstractFigure child) {
         // TODO
     }
+
+    // MOVE THIS
 }

@@ -6,6 +6,7 @@ package de.mine.experiments.anim.animatedgroup.command;
 public interface Command {
     void execute();
     void undo();
+    void cancel();
     boolean isRunning();
 
     void addOnExecutionStartedListener(ListenerCommand l);

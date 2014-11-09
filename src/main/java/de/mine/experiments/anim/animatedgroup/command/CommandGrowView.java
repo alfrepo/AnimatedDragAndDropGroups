@@ -44,6 +44,13 @@ public class CommandGrowView extends AbstractCommand {
         execute(Direction.UNDOING);
     }
 
+    @Override
+    public void cancel() {
+        if(valueAnimator != null){
+            valueAnimator.cancel();
+        }
+    }
+
     private void execute(final Direction animationDirection){
         int startValue = startHeight;
         int finalValue = finalHeight;

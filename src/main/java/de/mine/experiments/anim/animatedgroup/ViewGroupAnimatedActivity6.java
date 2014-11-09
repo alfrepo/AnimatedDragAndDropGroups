@@ -19,11 +19,11 @@ import de.mine.experiments.R;
 
 public class ViewGroupAnimatedActivity6 extends Activity {
 
-    View addItem;
-    View addGroup;
+    View buttonAddsItem;
+    View buttonAddsGroup;
 
-    View dragItem;
-    View dragGroup;
+    View buttonDragItem;
+    View buttonDragGroup;
 
     LinearLayout linearLayout;
 
@@ -38,23 +38,22 @@ public class ViewGroupAnimatedActivity6 extends Activity {
     }
 
     void init() {
-        addItem = findViewById(R.id.addItem);
-        addGroup = findViewById(R.id.addGroup);
-        dragItem = findViewById(R.id.dragItem);
-        dragGroup = findViewById(R.id.dragGroup);
+        buttonAddsItem = findViewById(R.id.addItem);
+        buttonAddsGroup = findViewById(R.id.addGroup);
+        buttonDragItem = findViewById(R.id.dragItem);
+        buttonDragGroup = findViewById(R.id.dragGroup);
 
         linearLayout = (LinearLayout) findViewById(R.id.linearLayoutGroups);
         viewGroupAnimated = (ViewGroupAnimated) findViewById(R.id.group2);
 
-        initAddItemListener();
         initDragItemListener();
     }
 
     void initDragItemListener() {
-        dragItem.setOnTouchListener(new View.OnTouchListener() {
+        buttonDragItem.setOnTouchListener(new View.OnTouchListener() {
             @Override
             public boolean onTouch(View v, MotionEvent event) {
-                if(event.getAction() == MotionEvent.ACTION_DOWN){
+                if (event.getAction() == MotionEvent.ACTION_DOWN) {
                     // which data to pass on drop
                     ClipData clipData = ClipData.newPlainText("label", "item");
 
@@ -75,7 +74,7 @@ public class ViewGroupAnimatedActivity6 extends Activity {
 
     void initAddItemListener() {
         // add listener
-        addItem.setOnTouchListener(new View.OnTouchListener() {
+        buttonAddsItem.setOnTouchListener(new View.OnTouchListener() {
             @Override
             public boolean onTouch(View v, MotionEvent event) {
                 if (event.getAction() == MotionEvent.ACTION_UP) {
