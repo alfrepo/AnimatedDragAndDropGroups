@@ -19,6 +19,8 @@ import de.mine.experiments.R;
 
 public class ViewGroupAnimatedActivity6 extends Activity {
 
+    public static final String TAG = "applog";
+
     View buttonAddsItem;
     View buttonAddsGroup;
 

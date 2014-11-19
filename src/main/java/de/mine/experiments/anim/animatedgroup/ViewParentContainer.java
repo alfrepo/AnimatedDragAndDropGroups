@@ -2,6 +2,7 @@ package de.mine.experiments.anim.animatedgroup;
 
 import android.content.Context;
 import android.util.AttributeSet;
+import android.view.View;
 import android.widget.LinearLayout;
 
 import java.util.List;
@@ -30,7 +31,34 @@ public class ViewParentContainer extends LinearLayout implements AbstractViewGro
 
 
     private void init(){
-        //TODO
+        this.setOnHierarchyChangeListener(getOnHierarchyChangeListener());
+    }
+
+    // ENFORCE OnHierarchyChangeListener as children
+
+    @Override
+    public void addView(View child) {
+        // check whether the view implements the OnHierarchyChangeListener
+        if(!(child instanceof  OnHierarchyChangeListener)){
+            throw new IllegalArgumentException(String.format("The child %s has to implemement OnHierarchyChangeListener", child.getClass().getSimpleName()));
+        }
+        super.addView(child);
+    }
+
+    private OnHierarchyChangeListener getOnHierarchyChangeListener(){
+        return new OnHierarchyChangeListener() {
+            @Override
+            public void onChildViewAdded(View parent, View child) {
+                // notify  child if, that it was added to a new parent. Let them REMOVE Dummies
+                ((OnHierarchyChangeListener)child).onChildViewAdded(parent, child);
+            }
+
+            @Override
+            public void onChildViewRemoved(View parent, View child) {
+                // notify  child if, that it was added to a new parent. Let them REMOVE Dummies
+                ((OnHierarchyChangeListener)child).onChildViewRemoved(parent, child);
+            }
+        };
     }
 
     void add(AbstractFigure figure, int index){

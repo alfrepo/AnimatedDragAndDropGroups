@@ -3,13 +3,14 @@ package de.mine.experiments.anim.animatedgroup;
 import android.content.Context;
 import android.graphics.Color;
 import android.util.AttributeSet;
+import android.view.DragEvent;
 import android.view.View;
 import android.view.ViewGroup;
 
 /**
  * Created by skip on 10.09.2014.
  */
-public class ViewDummyAnimated extends View implements AbstractFigure {
+public class ViewDummyAnimated extends View implements AbstractFigure, ViewGroup.OnHierarchyChangeListener {
 
     private int defaultHeight = 100;
     private AbstractFigure parent;
@@ -32,7 +33,37 @@ public class ViewDummyAnimated extends View implements AbstractFigure {
     }
 
     private void init(){
+        // TODO me de random BG
         setRandomBg();
+
+        // listen for drop
+        super.setOnDragListener(new OnDragListener() {
+            @Override
+            public boolean onDrag(View v, DragEvent event) {
+                UtilDrag.registerAsHoveringView(v, ViewDummyAnimated.this, event);
+                return true;
+            }
+        });
+    }
+
+    @Override
+    public void onChildViewAdded(View parent, View child) {
+        // dummy does nothing when it is added
+    }
+
+    @Override
+    public void onChildViewRemoved(View parent, View child) {
+        // dummy does nothing when it is removed
+    }
+
+    @Override
+    public void setOnDragListener(OnDragListener l) {
+        // do not allow do override my listeners
+    }
+
+    @Override
+    public boolean dispatchDragEvent(DragEvent event) {
+        return super.dispatchDragEvent(event);
     }
 
     @Override

@@ -46,7 +46,7 @@
 
     </LinearLayout>
 
-    <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    <de.mine.experiments.anim.animatedgroup.ViewParentContainer xmlns:android="http://schemas.android.com/apk/res/android"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:paddingLeft="@dimen/activity_horizontal_margin"
@@ -84,7 +84,7 @@
         </de.mine.experiments.anim.animatedgroup.ViewGroupAnimated>
 
 
-    </LinearLayout>
+    </de.mine.experiments.anim.animatedgroup.ViewParentContainer>
 
 
 </RelativeLayout>

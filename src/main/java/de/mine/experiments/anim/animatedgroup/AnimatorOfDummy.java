@@ -3,6 +3,7 @@ package de.mine.experiments.anim.animatedgroup;
 import android.content.Context;
 import android.graphics.Point;
 import android.util.Log;
+import android.view.DragEvent;
 import android.view.View;
 import android.view.ViewGroup;
 
@@ -30,24 +31,102 @@ public class AnimatorOfDummy {
     // command which is used to animate the dummy
     private CommandGrowView commandGrowView;
 
+    // last event which may be passed to the dummy
+    private DragEvent dragEvent;
+
+    /**
+     * Create a new AnimatorOfDummy
+     * @param context - the context
+     * @param parentOfDummy - the parent which dummies will be added to
+     */
     public AnimatorOfDummy(Context context, ViewGroup parentOfDummy){
         this.context = context;
         this.parentOfDummy = parentOfDummy;
     }
 
-    public void onDragInAddDummyAnimation(int dummyPositionInParent) {
+    /** The AnimatorOfDummy has to be notified about drag start, to remember the DragEvent.
+     *  It is needed to switch new dummies to drag mode.
+     *  @param dragEvent
+     */
+    public void onDragStarted(DragEvent dragEvent){
+        this.dragEvent = dragEvent;
+    }
 
+    /** The AnimatorOfDummy has to be notified about drag end, to remove the dummy from the parent.
+     *  @param dragEvent
+     */
+    public void onDragEnded(DragEvent dragEvent){
+        this.dragEvent = null;
+    }
+
+    /** Notify the AnimatorOfDummy when som object is dragged into the parent.
+     *  The dummy will be added to the Parent and grown to a large size
+     * @param dummyPositionInParent
+     */
+    public void onDragInAddDummyAnimation(int dummyPositionInParent) {
+        // lazy creation of dumm on drag in
+        initDummy(dummyPositionInParent);
+
+        // animate the addition of the view
+        commandGrowView.execute();
+    }
+
+    /**
+     * notify about dragOut, so that the dummy may be removed from parent
+     * */
+    public void onDragOutRemoveDummyAnimation(){
+        if(viewDummyAnimated != null){
+            commandGrowView.undo();
+        }
+    }
+
+    // PUBLIC HELPER
+
+    /** Returns the current ViewGroup which the dummy will be added to, when the method #onDragInAddDummyAnimation is called */
+    public ViewGroup getParentOfDummy() {
+        return parentOfDummy;
+    }
+
+    /** Cancel the animation and remove the dummy from parent. */
+    public void destroy(){
+        // undo animation
+        this.commandGrowView.cancel();
+        // remove the dummy from parent
+        if(parentOfDummy!=null){
+            parentOfDummy.removeView(viewDummyAnimated);
+        }
+    }
+
+    /** Returns the encapsulated ViewDummyAnimated */
+    public ViewDummyAnimated getViewDummyAnimated() {
+        return viewDummyAnimated;
+    }
+
+    // PRIVATE
+
+    private void initDummy(int dummyPositionInParent) {
         int parentWidth = parentOfDummy.getWidth();
 
         // create the dummy command if they are null
         boolean wasJustInitiatedTheDummy = this.initiatePlaceholderFollowerDummyAndCommand(parentWidth);
-        Log.d("anim", "Width: "+parentWidth);
+        Log.d("anim", "Width: " + parentWidth);
 
         /*  add the dummy to the group.
             It will be removed from the group when the undo animation finishes
             prepend the follower at the very first positon        */
         if (viewDummyAnimated.getParent() == null) {
             parentOfDummy.addView(viewDummyAnimated, dummyPositionInParent);
+
+            /* after adding  a Child to the parent, when dragging is already happening -
+             * DRAGEVENT.START has to be passed to the parent again,
+             * so that it may be passed to all children and to the new child too.
+             * It will activate the new child and switch it to drag mode.
+             */
+            if(dragEvent != null){
+                parentOfDummy.dispatchDragEvent(dragEvent);
+            }else{
+                Log.e(ViewGroupAnimatedActivity6.TAG, "Something went wrong - there is no DragEvent to switch new dummy to drag mode");
+            }
         }
 
         // remove the dummies on animation undo hook
@@ -60,34 +139,8 @@ public class AnimatorOfDummy {
                 }
             });
         }
-
-        // animate the addition of the view
-        commandGrowView.execute();
     }
 
-
-    public void onDragOutRemoveDummyAnimation(){
-        if(viewDummyAnimated != null){
-            commandGrowView.undo();
-        }
-    }
-
-    // PUBLIC HELPER
-
-    public ViewGroup getParentOfDummy() {
-        return parentOfDummy;
-    }
-
-    public void destroy(){
-        // undo animation
-        this.commandGrowView.cancel();
-        // remove the dummy from parent
-        if(parentOfDummy!=null){
-            parentOfDummy.removeView(viewDummyAnimated);
-        }
-    }
-
-    // PRIVATE
     private boolean initiatePlaceholderFollowerDummyAndCommand(int maxDummyWidth){
         // create the command if necessary
         if(commandGrowView == null){
