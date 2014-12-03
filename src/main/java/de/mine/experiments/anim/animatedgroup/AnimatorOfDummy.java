@@ -7,6 +7,9 @@ import android.view.DragEvent;
 import android.view.View;
 import android.view.ViewGroup;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import de.mine.experiments.anim.animatedgroup.command.Command;
 import de.mine.experiments.anim.animatedgroup.command.CommandGrowView;
 
@@ -15,7 +18,7 @@ import de.mine.experiments.anim.animatedgroup.command.CommandGrowView;
  * Removes the a dummy in an animated way, when method #onDragOutRemoveDummyAnimation() is called
  * Created by skip on 08.11.2014.
  */
-public class AnimatorOfDummy {
+public class AnimatorOfDummy implements IDragInViewIdentifier {
 
     public static final int INITIAL_DUMMY_HEIGHT_BEFORE_EXPANDING = 0;
     public static final int DUMMY_HEIGHT =  250; // fixed height of dummies before drop
@@ -33,6 +36,9 @@ public class AnimatorOfDummy {
 
     // last event which may be passed to the dummy
     private DragEvent dragEvent;
+
+    // dragListeners which are registered on the dummy
+    private List<View.OnDragListener> dummyOnDragListeners = new ArrayList<View.OnDragListener>();
 
     /**
      * Create a new AnimatorOfDummy
@@ -80,7 +86,25 @@ public class AnimatorOfDummy {
         }
     }
 
+    /** On Drag Listener which will be triggered on the dummy */
+    public void setDummyOnDragListener(View.OnDragListener dummyOnDragListener) {
+        this.dummyOnDragListeners.add(dummyOnDragListener);
+    }
+    public List<View.OnDragListener> getDummyOnDragListener() {
+        return dummyOnDragListeners;
+    }
+
     // PUBLIC HELPER
+
+
+    @Override
+    public boolean isDraggingWithinView() {
+        if( viewDummyAnimated != null){
+            return viewDummyAnimated.isDraggingWithinView();
+        }
+        return false;
+    }
+
 
     /** Returns the current ViewGroup which the dummy will be added to, when the method #onDragInAddDummyAnimation is called */
     public ViewGroup getParentOfDummy() {
@@ -145,6 +169,8 @@ public class AnimatorOfDummy {
         // create the command if necessary
         if(commandGrowView == null){
 
+            Log.d("isDraggingOverThis", "initiatePlaceholderFollowerDummyAndCommand");
+
             // create a dummy
             viewDummyAnimated = createADummy(INITIAL_DUMMY_HEIGHT_BEFORE_EXPANDING, maxDummyWidth);
 
@@ -158,6 +184,7 @@ public class AnimatorOfDummy {
 
     private ViewDummyAnimated createADummy(int initialDummyHeight, int dummyWidth) {
         ViewDummyAnimated dummy  = new ViewDummyAnimated(context);
+        addOnDragListener(dummy);
         int itemDummyWidth = measureHowLargeTheViewWouldBeAsChild(dummy, initialDummyHeight, dummyWidth).x;
 
         // initial lp to avoid nullPointerException
@@ -166,6 +193,20 @@ public class AnimatorOfDummy {
         dummy.setLayoutParams(lp);
 
         return dummy;
+    }
+
+    private void addOnDragListener(ViewDummyAnimated dummy){
+        dummy.setOnDragListener(new View.OnDragListener() {
+            @Override
+            public boolean onDrag(View v, DragEvent event) {
+                if(!dummyOnDragListeners.isEmpty()){
+                    for(View.OnDragListener l:dummyOnDragListeners){
+                        l.onDrag(v, event);
+                    }
+                }
+                return false;
+            }
+        });
     }
 
     public Point measureHowLargeTheViewWouldBeAsChild(View child, int exactHeightAdvice, int dummyWidth){

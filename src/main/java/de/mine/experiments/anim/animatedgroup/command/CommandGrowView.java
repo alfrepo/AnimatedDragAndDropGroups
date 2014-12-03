@@ -143,6 +143,7 @@ public class CommandGrowView extends AbstractCommand {
 
     // HELPER
 
+
     private long computeRestNavigationDuration(int startValue, int endValue){
         int currentDelta = Math.abs(startValue - endValue);
         int initialDelta = Math.abs(startHeight - finalHeight);

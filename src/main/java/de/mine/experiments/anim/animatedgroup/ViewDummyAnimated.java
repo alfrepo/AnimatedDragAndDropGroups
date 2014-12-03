@@ -3,6 +3,7 @@ package de.mine.experiments.anim.animatedgroup;
 import android.content.Context;
 import android.graphics.Color;
 import android.util.AttributeSet;
+import android.util.Log;
 import android.view.DragEvent;
 import android.view.View;
 import android.view.ViewGroup;
@@ -10,12 +11,15 @@ import android.view.ViewGroup;
 /**
  * Created by skip on 10.09.2014.
  */
-public class ViewDummyAnimated extends View implements AbstractFigure, ViewGroup.OnHierarchyChangeListener {
+public class ViewDummyAnimated extends View implements AbstractFigure, ViewGroup.OnHierarchyChangeListener, IDragInViewIdentifier {
 
     private int defaultHeight = 100;
     private AbstractFigure parent;
 
     private ViewDummyAnimated follower;
+    public boolean isDraggingOverThis = false;
+
+    private OnDragListener onDragListener;
 
     public ViewDummyAnimated(Context context) {
         super(context);
@@ -32,18 +36,15 @@ public class ViewDummyAnimated extends View implements AbstractFigure, ViewGroup
         init();
     }
 
+    @Override
+    public boolean isDraggingWithinView() {
+        return isDraggingOverThis;
+    }
+
+
     private void init(){
         // TODO me de random BG
         setRandomBg();
-
-        // listen for drop
-        super.setOnDragListener(new OnDragListener() {
-            @Override
-            public boolean onDrag(View v, DragEvent event) {
-                UtilDrag.registerAsHoveringView(v, ViewDummyAnimated.this, event);
-                return true;
-            }
-        });
     }
 
     @Override
@@ -57,13 +58,23 @@ public class ViewDummyAnimated extends View implements AbstractFigure, ViewGroup
     }
 
     @Override
-    public void setOnDragListener(OnDragListener l) {
-        // do not allow do override my listeners
-    }
-
-    @Override
     public boolean dispatchDragEvent(DragEvent event) {
-        return super.dispatchDragEvent(event);
+
+        /*  check, whether we are dragging over the dummy
+            use the dispatchDragEvent method to capture events internally - they arrive here life.
+            The listener may be overridden from outside - there may be only one
+         */
+        Boolean change = Utils.isDraggingOverFromDragEvent(event);
+        if(change != null && isDraggingOverThis!=change){
+            isDraggingOverThis = change;
+            Log.d("isDraggingOverThis", "Dummy: isDraggingOverThis: "+isDraggingOverThis);
+        }
+        super.dispatchDragEvent(event);
+
+        /** Totally important! View which wish to receive drag events
+         * (start, stop, location) should return true when the receive a
+         * DragEvent.ACTION_DRAG_STARTED */
+        return true;
     }
 
     @Override

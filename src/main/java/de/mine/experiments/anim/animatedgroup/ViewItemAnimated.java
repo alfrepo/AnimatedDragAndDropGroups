@@ -15,13 +15,15 @@ import de.mine.experiments.R;
 /**
  * Created by skip on 20.09.2014.
  */
-public class ViewItemAnimated extends RelativeLayout implements AbstractFigure, ViewGroup.OnHierarchyChangeListener{
+public class ViewItemAnimated extends RelativeLayout implements AbstractFigure, ViewGroup.OnHierarchyChangeListener, IDragInViewIdentifier{
 
     private Context context;
     private AbstractFigure parent;
     private int heightFixed = 100;
     private AnimatorOfDummy animatorOfDummy;
+    private boolean isDraggingOverThis = false;
 
+    OnDragOutDummyUnregister onDragOutDummyUnregister = new OnDragOutDummyUnregister();
 
     public ViewItemAnimated(Context context) {
         super(context);
@@ -38,6 +40,10 @@ public class ViewItemAnimated extends RelativeLayout implements AbstractFigure, 
         init(context);
     }
 
+    @Override
+    public boolean isDraggingWithinView() {
+        return isDraggingOverThis;
+    }
 
     private void init(Context context){
         this.context = context;
@@ -45,25 +51,6 @@ public class ViewItemAnimated extends RelativeLayout implements AbstractFigure, 
         // set layout
         LayoutInflater inflater = LayoutInflater.from(context);
         inflater.inflate(R.layout.activity6_view_item_animated, this);
-
-        // listen for dragging
-        this.setOnDragListener(new OnDragListener() {
-            @Override
-            public boolean onDrag(View v, DragEvent event) {
-                // delegate to UtilDrag
-                UtilDrag.registerAsHoveringView(v, ViewItemAnimated.this, event);
-
-                // react on drag by manipulating the dummy
-                if(event.getAction()==DragEvent.ACTION_DRAG_ENTERED){
-                    onDragIn();
-                }else if(event.getAction()==DragEvent.ACTION_DRAG_EXITED){
-                    onDragOut();
-                }else if(event.getAction()==DragEvent.ACTION_DRAG_LOCATION){
-                    return false; // do not dispatch Location events to increase productivity
-                }
-                return true;
-            }
-        });
     }
 
     @Override
@@ -73,8 +60,23 @@ public class ViewItemAnimated extends RelativeLayout implements AbstractFigure, 
 
     @Override
     public void onChildViewAdded(View parent, View child) {
-        // TODO me remove dummy
-        Log.d("myDrag", "onChildViewAdded");
+        initializeDummyOnNewParent();
+    }
+
+    private void initializeDummyOnNewParent(){
+        if(getParent() != null){
+
+            // dummy not empty but has wrong parent
+            if(animatorOfDummy != null && (animatorOfDummy.getParentOfDummy() != getParent())){
+                animatorOfDummy.destroy();
+                animatorOfDummy = null;
+            }
+
+            // dummy does not exist yet
+            if(animatorOfDummy == null){
+                animatorOfDummy = new AnimatorOfDummy(context, (ViewGroup)getParent());
+            }
+        }
     }
 
     @Override
@@ -82,23 +84,47 @@ public class ViewItemAnimated extends RelativeLayout implements AbstractFigure, 
         // TODO me remove dummy
     }
 
+    @Override
+    public boolean dispatchDragEvent(DragEvent event) {
+        // check, whether we are dragging over the dummy
+        Boolean change = Utils.isDraggingOverFromDragEvent(event);
+        if(change != null){
+            isDraggingOverThis = change;
+        }
 
+        // react on drag by manipulating the dummy
+        if(event.getAction()==DragEvent.ACTION_DRAG_STARTED) {
+            onDragStart(event);
+
+        }else if(event.getAction()==DragEvent.ACTION_DRAG_ENTERED){
+            onDragIn();
+
+        }else if(event.getAction()==DragEvent.ACTION_DRAG_EXITED){
+            onDragOutDummyUnregister.onDrag(null, event);
+
+        }else if(event.getAction()==DragEvent.ACTION_DRAG_LOCATION){
+            // do not dispatch Location events to increase productivity
+
+        }else if(event.getAction()==DragEvent.ACTION_DRAG_ENDED) {
+            onDragEnded(event);
+        }
+
+        return true;
+    }
+
+    private void onDragStart(DragEvent dragEvent){
+        if(this.animatorOfDummy != null){
+            this.animatorOfDummy.onDragStarted(dragEvent);
+        }
+    }
+
+    private void onDragEnded(DragEvent dragEvent){
+        if(this.animatorOfDummy != null){
+            this.animatorOfDummy.onDragEnded(dragEvent);
+        }
+    }
 
     protected void onDragIn(){
-        // check if the parent is the same
-        if(getParent() != null && this.animatorOfDummy!=null){
-            if(this.animatorOfDummy.getParentOfDummy() != getParent()){
-                // delete old dummy
-                this.animatorOfDummy.destroy();
-                this.animatorOfDummy = null;
-            }
-        }
-
-        // if initialisation is needed - init the dummy
-        if(this.animatorOfDummy==null){
-            this.animatorOfDummy = new AnimatorOfDummy(context, (ViewGroup) this.getParent());
-        }
-
         // trigger the animation
         int index = Utils.getViewIndexInParent(this);
         animatorOfDummy.onDragInAddDummyAnimation(index+1);
@@ -107,41 +133,10 @@ public class ViewItemAnimated extends RelativeLayout implements AbstractFigure, 
     // TODO
     // list all the waiting, not triggered Requiest, in each View with dummies.
     // clear the liston enter
-    protected void onDragOut(){
-            View containerHovering = UtilDrag.getHoveringOverContainerView();
-            if(animatorOfDummy != null && containerHovering!=ViewItemAnimated.this && containerHovering!=animatorOfDummy.getViewDummyAnimated()){
+    protected void onDragOutRemoveDummyAnimation(){
+            if(animatorOfDummy != null){
                  animatorOfDummy.onDragOutRemoveDummyAnimation();
             }
-
-        // install a thread, wait x ms and check whether we are within the child / parent
-//        new Thread(new Runnable(){
-//            @Override
-//            public void run() {
-//                try {
-//                    Thread.sleep(1000);
-//                } catch (InterruptedException e) {
-//                    e.printStackTrace();
-//                }
-//                // undo the animation
-//                View containerHovering = UtilDrag.getHoveringOverContainerView();
-//                Log.d("draggin", "--- Decide whether to Navigate out ---");
-//                Log.d("draggin", "containerHovering:" + containerHovering);
-//                Log.d("draggin","dummy: "+animatorOfDummy.getViewDummyAnimated());
-//                Log.d("draggin","viewgroup: "+ViewItemAnimated.this);
-//                Log.d("draggin", "------------");
-//
-//                if(animatorOfDummy != null && containerHovering!=ViewItemAnimated.this && containerHovering!=animatorOfDummy.getViewDummyAnimated()){
-//
-////                    post(new Runnable() {
-////                        @Override
-////                        public void run() {
-////                            animatorOfDummy.onDragOutRemoveDummyAnimation();
-////                        }
-////                    });
-//
-//                }
-//            }
-//        }).start();
     }
 
 
@@ -157,5 +152,41 @@ public class ViewItemAnimated extends RelativeLayout implements AbstractFigure, 
         int g = ((int) (Math.random()*255)) ;
         int b = ((int) (Math.random()*255)) ;
         setBackgroundColor(Color.argb(255, r, g, b));
+    }
+
+
+
+    class OnDragOutDummyUnregister implements OnDragListener{
+        @Override
+        public boolean onDrag(View v, DragEvent event) {
+            if(event.getAction() == DragEvent.ACTION_DRAG_EXITED){
+
+                new Thread(new Runnable() {
+                    @Override
+                    public void run() {
+                        // wait 100ms
+                        try {
+                            Thread.sleep(1000);
+                        } catch (InterruptedException e) {
+                            e.printStackTrace();
+                        }
+
+                        // check whether over dummy or over current Item
+                        if(!isDraggingWithinView() && !animatorOfDummy.isDraggingWithinView()){
+                            // start onDragOutRemoveDummyAnimation(); if yes
+                            ViewItemAnimated.this.post(new Runnable() {
+                                @Override
+                                public void run() {
+                                    Log.d("isDraggingOverThis", "onDragOutRemoveDummyAnimation()");
+                                    // TODO me
+                                    onDragOutRemoveDummyAnimation();
+                                }
+                            });
+                        }
+                    }
+                }).start();
+            }
+            return false;
+        }
     }
 }

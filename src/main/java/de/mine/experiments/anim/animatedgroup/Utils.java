@@ -36,4 +36,17 @@ public final class Utils {
         }
         return "unknown event";
     }
+
+    /** Checks whether the Event  tells something about an update of the drag position over view*/
+    public static Boolean isDraggingOverFromDragEvent(DragEvent event){
+        switch (event.getAction()){
+            case DragEvent.ACTION_DRAG_ENTERED:
+                return true;
+            case DragEvent.ACTION_DRAG_EXITED:
+            case DragEvent.ACTION_DRAG_ENDED:
+                return false;
+            default:
+                return null;
+        }
+    }
 }
