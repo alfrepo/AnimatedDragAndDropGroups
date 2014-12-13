@@ -2,11 +2,11 @@ package de.mine.experiments.anim.animatedgroup;
 
 import android.content.Context;
 import android.graphics.Color;
-import android.util.AttributeSet;
 import android.util.Log;
 import android.view.DragEvent;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.Toast;
 
 /**
  * Created by skip on 10.09.2014.
@@ -26,15 +26,6 @@ public class ViewDummyAnimated extends View implements AbstractFigure, ViewGroup
         init();
     }
 
-    public ViewDummyAnimated(Context context, AttributeSet attrs) {
-        super(context, attrs);
-        init();
-    }
-
-    public ViewDummyAnimated(Context context, AttributeSet attrs, int defStyleAttr) {
-        super(context, attrs, defStyleAttr);
-        init();
-    }
 
     @Override
     public boolean isDraggingWithinView() {
@@ -57,6 +48,13 @@ public class ViewDummyAnimated extends View implements AbstractFigure, ViewGroup
         // dummy does nothing when it is removed
     }
 
+    public void replaceBy(View view){
+        // TODO me - implement animated replacement of dummy by a new View
+        // grow the dummy to the size of the new view
+        // remove it selfe from parent
+        // add the new view instead
+    }
+
     @Override
     public boolean dispatchDragEvent(DragEvent event) {
 
@@ -69,6 +67,12 @@ public class ViewDummyAnimated extends View implements AbstractFigure, ViewGroup
             isDraggingOverThis = change;
             Log.d("isDraggingOverThis", "Dummy: isDraggingOverThis: "+isDraggingOverThis);
         }
+
+        if(event.getAction() == DragEvent.ACTION_DROP){
+            Toast.makeText(getContext(), "drop", Toast.LENGTH_SHORT).show();
+            DropHandler.onDropOnDummy(this, event);
+        }
+
         super.dispatchDragEvent(event);
 
         /** Totally important! View which wish to receive drag events

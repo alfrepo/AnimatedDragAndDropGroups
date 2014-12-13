@@ -52,7 +52,9 @@ public class CommandGrowView extends AbstractCommand {
     }
 
     private void execute(final Direction animationDirection){
-        int startValue = startHeight;
+        int startValue = receiverView.getHeight();
+        Log.d("receiverView","receiverView.getHeight(): "+startValue);
+
         int finalValue = finalHeight;
         long currentDuration = duration;
 
@@ -61,8 +63,7 @@ public class CommandGrowView extends AbstractCommand {
 
         // swap start and end value if animating backward
         if(animationDirection == Direction.UNDOING){
-            startValue = finalHeight;
-            finalValue = startHeight;
+            finalValue = 0;
         }
 
         // modify startHeight if in progress
@@ -70,14 +71,11 @@ public class CommandGrowView extends AbstractCommand {
             // cancel the animation
             valueAnimator.cancel();
 
-            // start the animation with the current size of view
-            if(receiverView.getHeight() >= 0){
-                startValue = receiverView.getHeight();
-            }
-
+            // TODO - recalculate duration. Animation time should be shorter when animating only the half distance, when breaking up prev animation
             // start the animation with another duration
-            currentDuration = computeRestNavigationDuration(startValue, finalValue);
+//            currentDuration = computeRestNavigationDuration(startValue, finalValue);
         }
+
 
         // now animate
         Log.d("draggin",String.format("From %s px to %s px", startValue, finalValue));

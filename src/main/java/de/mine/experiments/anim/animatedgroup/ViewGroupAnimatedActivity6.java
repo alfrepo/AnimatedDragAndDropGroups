@@ -52,26 +52,37 @@ public class ViewGroupAnimatedActivity6 extends Activity {
     }
 
     void initDragItemListener() {
+        // drag item
         buttonDragItem.setOnTouchListener(new View.OnTouchListener() {
             @Override
             public boolean onTouch(View v, MotionEvent event) {
                 if (event.getAction() == MotionEvent.ACTION_DOWN) {
-                    // which data to pass on drop
-                    ClipData clipData = ClipData.newPlainText("label", "item");
-
-                    // create a new shadow builder
-                    ViewItemAnimated viewItemAnimated = new ViewItemAnimated(getApplicationContext());
-
-                    // TODO measure the item view and use it as shadow
-//                View.DragShadowBuilder dragShadowBuilder = new View.DragShadowBuilder(viewItemAnimated);
-                    View.DragShadowBuilder dragShadowBuilder = new View.DragShadowBuilder(v);
-
-                    // start dragging
-                    v.startDrag(clipData, dragShadowBuilder, null, 0);
+                    startDrag(v, R.layout.activity6_view_item_animated, 500, 100);
                 }
                 return false;
             }
         });
+        // drag group
+        buttonDragGroup.setOnTouchListener(new View.OnTouchListener() {
+            @Override
+            public boolean onTouch(View v, MotionEvent event) {
+                if (event.getAction() == MotionEvent.ACTION_DOWN) {
+                    startDrag(v, R.layout.activity6_view_group_animated, 500, 200);
+                }
+                return false;
+            }
+        });
+    }
+
+    private void startDrag(View view, int shadowRessourceId, int width, int height){
+        // which data to pass on drop
+        ClipData clipData = ClipData.newPlainText("ressourceId", String.valueOf(shadowRessourceId) );
+
+        //  measure the item view and use it as shadow
+        View.DragShadowBuilder dragShadowBuilder = DropHandler.createDragShadowBuilder(shadowRessourceId, getLayoutInflater(), width, height);
+
+        // start dragging
+        view.startDrag(clipData, dragShadowBuilder, null, 0);
     }
 
     void initAddItemListener() {
@@ -143,9 +154,6 @@ public class ViewGroupAnimatedActivity6 extends Activity {
         final View v = findViewById(R.id.item2);
         ViewPropertyAnimator animator = v.animate();
         if (isLarge) {
-//            animator.scaleY(30);
-//            ObjectAnimator.ofFloat(v, "height", 100f).start();
-
             ValueAnimator va = ValueAnimator.ofInt(100, 400);
             va.setDuration(200);
             va.addUpdateListener(new ValueAnimator.AnimatorUpdateListener() {
@@ -158,7 +166,6 @@ public class ViewGroupAnimatedActivity6 extends Activity {
             va.start();
 
         } else {
-//            animator.scaleY(-30);
             ObjectAnimator.ofFloat(v, "height", 10f).start();
 
             ValueAnimator va = ValueAnimator.ofInt(400, 100);

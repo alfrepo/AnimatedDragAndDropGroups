@@ -182,6 +182,7 @@ public class AnimatorOfDummy implements IDragInViewIdentifier {
         return false;
     }
 
+
     private ViewDummyAnimated createADummy(int initialDummyHeight, int dummyWidth) {
         ViewDummyAnimated dummy  = new ViewDummyAnimated(context);
         addOnDragListener(dummy);
