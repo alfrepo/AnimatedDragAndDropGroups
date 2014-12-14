@@ -25,7 +25,8 @@ public class ViewGroupAnimated extends ViewGroup implements AbstractViewGroup, V
     private AnimatorOfDummy animatorOfDummyInsider;
     private AnimatorOfDummy animatorOfDummyFollower;
 
-    private OnDragOutDummyUnregister onDragOutDummyUnregister = new OnDragOutDummyUnregister();
+    // is triggered when the drag leaves the view or dummy to hide the dummy
+    private OnDragOutDummyUnregister onDragOutDummyUnregister;
 
     private int minHeight = 100;
     private int minWidth = 100;
@@ -58,8 +59,15 @@ public class ViewGroupAnimated extends ViewGroup implements AbstractViewGroup, V
         // pass the information about additon of new Children to the children themselves if they implement OnHierarchyChangeListener
         this.setOnHierarchyChangeListener(getOnHierarchyChangeListener());
 
-        // dummy insider
+        // dummy insider - the parent is this
         this.animatorOfDummyInsider = new AnimatorOfDummy(context, this);
+
+        // dummy follower has the same parent as the view. Parent is attached later when the view is attached
+        this.animatorOfDummyFollower = new AnimatorOfDummy(context);
+
+        // create a listener which would hide, when drag leaves this view and dummy and add it to the follower
+        this.onDragOutDummyUnregister = new OnDragOutDummyUnregister(this, this.animatorOfDummyFollower, new AnimatorOfDummy[]{this.animatorOfDummyInsider, this.animatorOfDummyFollower});
+        this.animatorOfDummyFollower.addDummyOnDragListener(this.onDragOutDummyUnregister);
 
         setMinimumHeight(minHeight);
         setMinimumWidth(minWidth);
@@ -69,6 +77,7 @@ public class ViewGroupAnimated extends ViewGroup implements AbstractViewGroup, V
 
         setRandomBg();
     }
+
 
     private OnHierarchyChangeListener getOnHierarchyChangeListener(){
         return new OnHierarchyChangeListener() {
@@ -112,7 +121,6 @@ public class ViewGroupAnimated extends ViewGroup implements AbstractViewGroup, V
             isDraggingOverThis = change;
         }
 
-        // TODO: make the ACTION_DRAG_EXITEDanimation shifted in time
         // react on drag by manipulating the dummy
         if(event.getAction() == DragEvent.ACTION_DRAG_STARTED ){
             animatorOfDummyFollower.onDragStarted(event);
@@ -123,8 +131,7 @@ public class ViewGroupAnimated extends ViewGroup implements AbstractViewGroup, V
 
         }else if(event.getAction() == DragEvent.ACTION_DRAG_EXITED){
             Log.d("draggin", "Drag out");
-//                    onDragOutRemoveDummyAnimation();
-            onDragOutDummyUnregister.onDrag(null, event);
+            onDragOutDummyUnregister.onDrag(this, event);
 
         }else if(event.getAction()==DragEvent.ACTION_DRAG_LOCATION){
             // do not dispatch Location events to increase productivity
@@ -136,17 +143,6 @@ public class ViewGroupAnimated extends ViewGroup implements AbstractViewGroup, V
             animatorOfDummyFollower.onDragEnded(event);
         }
 
-
-         // TODO: remove
-         if(event.getAction() == DragEvent.ACTION_DRAG_LOCATION ){
-            ViewDummyAnimated v = hasDummy();
-            if(null !=v){
-                if(v.getHeight()>20){
-                    Log.d("isDraggingOverGroup", "hasDummy "+ Utils.getDragEventName(event.getAction()));
-                }
-                /** Check why the events are not received by dummy, except of START_EVENT */
-            }
-        }
         /** It is important to call the super.dispatch(). Or the children will never be able to receive drag.         */
         super.dispatchDragEvent(event);
 
@@ -272,64 +268,25 @@ public class ViewGroupAnimated extends ViewGroup implements AbstractViewGroup, V
         this.animatorOfDummyInsider.onDragInAddDummyAnimation(0);
 
         int index = Utils.getViewIndexInParent(this);
-        this.animatorOfDummyFollower.onDragInAddDummyAnimation(index+1);
+        this.animatorOfDummyFollower.onDragInAddDummyAnimation(index + 1);
     }
 
     @Override
     public void onChildViewAdded(View parent, View child) {
         // this view was added to a new parent - recreate it
-        initializeFollowerDummyOnNewParent();
+        this.animatorOfDummyFollower.attachToParentOfDummyBySibling(this);
     }
 
     @Override
     public void onChildViewRemoved(View parent, View child) {
-        // destroy the dummy in old parent
-        animatorOfDummyFollower.destroy();
-        animatorOfDummyFollower = null;
-    }
-
-    /**
-     * Since there is no way to check, when the current view is attached to a new parent
-     * we will check for a new parent on every drag in.
-     * This method will reinitialize
-     */
-    private void initializeFollowerDummyOnNewParent(){
-        if(getParent() != null){
-
-            // dummy not empty but has wrong parent
-            if(animatorOfDummyFollower != null && (animatorOfDummyFollower.getParentOfDummy() != getParent())){
-                animatorOfDummyFollower.destroy();
-                animatorOfDummyFollower = null;
-            }
-
-            // dummy does not exist yet
-            if(animatorOfDummyFollower == null){
-                animatorOfDummyFollower = new AnimatorOfDummy(context, (ViewGroup)getParent());
-            }
-        }
-    }
-
-    // start resizing shrinking the view slowly
-    private void onDragOutRemoveDummyAnimation(){
-        this.animatorOfDummyInsider.onDragOutRemoveDummyAnimation();
-        this.animatorOfDummyFollower.onDragOutRemoveDummyAnimation();
+        // detachFromParent the dummy in old parent
+        animatorOfDummyFollower.detachFromParent();
     }
 
 
     // should be inside the dummy
     private void onDropInReplaceDummyAndStopCommand(){
 
-    }
-
-    // TODO me del
-    private ViewDummyAnimated hasDummy(){
-        for(int i=0; i<getChildCount(); i++){
-            View child = getChildAt(i);
-            if(child instanceof ViewDummyAnimated){
-                return (ViewDummyAnimated) child;
-            }
-        }
-        return null;
     }
 
     @Override
@@ -413,37 +370,5 @@ public class ViewGroupAnimated extends ViewGroup implements AbstractViewGroup, V
         // TODO
     }
 
-    class OnDragOutDummyUnregister implements OnDragListener{
-        @Override
-        public boolean onDrag(View v, DragEvent event) {
-            if(event.getAction() == DragEvent.ACTION_DRAG_EXITED){
 
-                new Thread(new Runnable() {
-                    @Override
-                    public void run() {
-                        // wait 100ms
-                        try {
-                            Thread.sleep(1000);
-                        } catch (InterruptedException e) {
-                            e.printStackTrace();
-                        }
-
-                        // check whether over dummy or over current Item
-                        if(!isDraggingWithinView() && !animatorOfDummyFollower.isDraggingWithinView()){
-                            // start onDragOutRemoveDummyAnimation(); if yes
-                            ViewGroupAnimated.this.post(new Runnable() {
-                                @Override
-                                public void run() {
-                                    Log.d("isDraggingOverThis", "onDragOutRemoveDummyAnimation()");
-                                    // TODO me
-                                    onDragOutRemoveDummyAnimation();
-                                }
-                            });
-                        }
-                    }
-                }).start();
-            }
-            return false;
-        }
-    }
 }

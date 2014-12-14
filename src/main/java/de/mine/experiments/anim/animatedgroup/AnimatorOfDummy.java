@@ -44,10 +44,66 @@ public class AnimatorOfDummy implements IDragInViewIdentifier {
      * Create a new AnimatorOfDummy
      * @param context - the context
      * @param parentOfDummy - the parent which dummies will be added to
-     */
+     * */
     public AnimatorOfDummy(Context context, ViewGroup parentOfDummy){
         this.context = context;
+        attachToParent(parentOfDummy);
+    }
+
+    /**
+     * Use this constructor only with method #attachToParent, when the parent is not known
+     * at creation time.
+     * Call #attachToParent as soon as the parent is known, otherwise animation will not be possible
+     * @param context
+     */
+    public AnimatorOfDummy(Context context){
+        this.context = context;
+    }
+
+    /**
+     * Attachement to a new parent. Happens if a dummy is moved from one Parent to another,
+     * together with it's view
+     * @param parentOfDummy
+     */
+    public void attachToParent(ViewGroup parentOfDummy){
+        // first detach from parent
+        detachFromParent();
+
+        // reattach to the new parent
         this.parentOfDummy = parentOfDummy;
+    }
+
+    /**
+     * This method will reinitialize the Dummy animator every time when this View is added to a new
+     * parent, since the dummy animator must know the parent to add the dummy follower to it.
+     */
+    public void attachToParentOfDummyBySibling(View viewSiblingOfDummy){
+        if(viewSiblingOfDummy.getParent() != null){
+
+            // dummy not empty but has wrong parent
+            if((this.getParentOfDummy() != viewSiblingOfDummy.getParent())){
+                this.detachFromParent();
+            }
+
+            // dummy does not have a parent yet
+            if(this.getParentOfDummy() == null){
+                // reattach to the new parent
+                this.attachToParent((ViewGroup) viewSiblingOfDummy.getParent());
+            }
+        }
+    }
+
+    /** Cancel the animation and remove the dummy from parent. */
+    public void detachFromParent(){
+        // undo animation
+        if(commandGrowView != null){
+            this.commandGrowView.cancel();
+        }
+
+        // remove the dummy from parent
+        if(parentOfDummy!=null){
+            parentOfDummy.removeView(viewDummyAnimated);
+        }
     }
 
     /** The AnimatorOfDummy has to be notified about drag start, to remember the DragEvent.
@@ -70,6 +126,11 @@ public class AnimatorOfDummy implements IDragInViewIdentifier {
      * @param dummyPositionInParent
      */
     public void onDragInAddDummyAnimation(int dummyPositionInParent) {
+        if(parentOfDummy == null){
+            Log.e(Constants.LOGE, "The Parent should be set by using #attachToParent(). Otherwise no animation will occur.");
+            return;
+        }
+
         // lazy creation of dumm on drag in
         initDummy(dummyPositionInParent);
 
@@ -86,9 +147,12 @@ public class AnimatorOfDummy implements IDragInViewIdentifier {
         }
     }
 
-    /** On Drag Listener which will be triggered on the dummy */
-    public void setDummyOnDragListener(View.OnDragListener dummyOnDragListener) {
+    /** On Drag Listener which will be triggered on the dummy to the list of listeners */
+    public void addDummyOnDragListener(View.OnDragListener dummyOnDragListener) {
         this.dummyOnDragListeners.add(dummyOnDragListener);
+    }
+    public void removeDummyOnDragListener(View.OnDragListener dummyOnDragListener) {
+        this.dummyOnDragListeners.remove(dummyOnDragListener);
     }
     public List<View.OnDragListener> getDummyOnDragListener() {
         return dummyOnDragListeners;
@@ -109,16 +173,6 @@ public class AnimatorOfDummy implements IDragInViewIdentifier {
     /** Returns the current ViewGroup which the dummy will be added to, when the method #onDragInAddDummyAnimation is called */
     public ViewGroup getParentOfDummy() {
         return parentOfDummy;
-    }
-
-    /** Cancel the animation and remove the dummy from parent. */
-    public void destroy(){
-        // undo animation
-        this.commandGrowView.cancel();
-        // remove the dummy from parent
-        if(parentOfDummy!=null){
-            parentOfDummy.removeView(viewDummyAnimated);
-        }
     }
 
     /** Returns the encapsulated ViewDummyAnimated */

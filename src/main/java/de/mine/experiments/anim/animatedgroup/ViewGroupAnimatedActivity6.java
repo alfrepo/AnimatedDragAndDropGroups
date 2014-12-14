@@ -1,19 +1,11 @@
 package de.mine.experiments.anim.animatedgroup;
 
-import android.animation.ObjectAnimator;
-import android.animation.ValueAnimator;
 import android.app.Activity;
 import android.content.ClipData;
 import android.os.Bundle;
-import android.util.Log;
-import android.view.Menu;
-import android.view.MenuItem;
 import android.view.MotionEvent;
 import android.view.View;
-import android.view.ViewGroup;
-import android.view.ViewPropertyAnimator;
 import android.widget.LinearLayout;
-import android.widget.Toast;
 
 import de.mine.experiments.R;
 
@@ -21,14 +13,10 @@ public class ViewGroupAnimatedActivity6 extends Activity {
 
     public static final String TAG = "applog";
 
-    View buttonAddsItem;
-    View buttonAddsGroup;
-
     View buttonDragItem;
     View buttonDragGroup;
 
     LinearLayout linearLayout;
-
     ViewGroupAnimated viewGroupAnimated;
 
     @Override
@@ -40,8 +28,6 @@ public class ViewGroupAnimatedActivity6 extends Activity {
     }
 
     void init() {
-        buttonAddsItem = findViewById(R.id.addItem);
-        buttonAddsGroup = findViewById(R.id.addGroup);
         buttonDragItem = findViewById(R.id.dragItem);
         buttonDragGroup = findViewById(R.id.dragGroup);
 
@@ -85,99 +71,4 @@ public class ViewGroupAnimatedActivity6 extends Activity {
         view.startDrag(clipData, dragShadowBuilder, null, 0);
     }
 
-    void initAddItemListener() {
-        // add listener
-        buttonAddsItem.setOnTouchListener(new View.OnTouchListener() {
-            @Override
-            public boolean onTouch(View v, MotionEvent event) {
-                if (event.getAction() == MotionEvent.ACTION_UP) {
-                    Log.d("tag", "onTouch addItem");
-                    View item = createItem();
-                    viewGroupAnimated.addViewAnimated(item);
-                }
-
-                return true;
-            }
-        });
-    }
-
-    private View createItem() {
-        ViewItemAnimated item = new ViewItemAnimated(getApplicationContext());
-        // TODO layout
-        return item;
-    }
-
-    void createVga() {
-        ViewGroup parent = (ViewGroup) findViewById(R.id.linearLayout);
-        // mine
-        ViewGroupAnimated vga = new ViewGroupAnimated(getApplicationContext());
-        vga.setLayoutParams(new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
-        parent.addView(vga);
-    }
-
-
-    @Override
-    public boolean onCreateOptionsMenu(Menu menu) {
-        // Inflate the menu; this adds items to the action bar if it is present.
-        return true;
-    }
-
-    @Override
-    public boolean onOptionsItemSelected(MenuItem item) {
-        // Handle action bar item clicks here. The action bar will
-        // automatically handle clicks on the Home/Up button, so long
-        // as you specify a parent activity in AndroidManifest.xml.
-        int id = item.getItemId();
-        if (id == R.id.action_settings) {
-            return true;
-        }
-        return super.onOptionsItemSelected(item);
-    }
-
-    @Override
-    public boolean onTouchEvent(MotionEvent event) {
-        boolean result = super.onTouchEvent(event);
-
-        if (event.getAction() == MotionEvent.ACTION_DOWN) {
-            Toast.makeText(getApplicationContext(), "down", Toast.LENGTH_SHORT).show();
-            resize(true);
-        } else if (event.getAction() == MotionEvent.ACTION_UP) {
-            Toast.makeText(getApplicationContext(), "up", Toast.LENGTH_SHORT).show();
-            resize(false);
-        }
-
-        return result;
-    }
-
-
-    public void resize(boolean isLarge) {
-        final View v = findViewById(R.id.item2);
-        ViewPropertyAnimator animator = v.animate();
-        if (isLarge) {
-            ValueAnimator va = ValueAnimator.ofInt(100, 400);
-            va.setDuration(200);
-            va.addUpdateListener(new ValueAnimator.AnimatorUpdateListener() {
-                public void onAnimationUpdate(ValueAnimator animation) {
-                    Integer value = (Integer) animation.getAnimatedValue();
-                    v.getLayoutParams().height = value.intValue();
-                    v.requestLayout();
-                }
-            });
-            va.start();
-
-        } else {
-            ObjectAnimator.ofFloat(v, "height", 10f).start();
-
-            ValueAnimator va = ValueAnimator.ofInt(400, 100);
-            va.setDuration(200);
-            va.addUpdateListener(new ValueAnimator.AnimatorUpdateListener() {
-                public void onAnimationUpdate(ValueAnimator animation) {
-                    Integer value = (Integer) animation.getAnimatedValue();
-                    v.getLayoutParams().height = value.intValue();
-                    v.requestLayout();
-                }
-            });
-            va.start();
-        }
-    }
 }

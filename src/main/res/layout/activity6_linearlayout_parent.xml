@@ -19,20 +19,6 @@
         <Button
             android:layout_width="100dp"
             android:layout_height="wrap_content"
-            android:text="AddItem"
-            android:id="@+id/addItem"
-            android:background="#ff7ffdff" />
-
-        <Button
-            android:layout_width="100dp"
-            android:layout_height="wrap_content"
-            android:text="AddGroup"
-            android:id="@+id/addGroup"
-            android:background="#ff7ffdff"/>
-
-        <Button
-            android:layout_width="100dp"
-            android:layout_height="wrap_content"
             android:text="DragItem"
             android:id="@+id/dragItem"
             android:background="#ffff3e2d" />
