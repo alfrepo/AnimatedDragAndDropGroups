@@ -43,7 +43,7 @@ public class ViewGroupAnimatedActivity6 extends Activity {
             @Override
             public boolean onTouch(View v, MotionEvent event) {
                 if (event.getAction() == MotionEvent.ACTION_DOWN) {
-                    startDrag(v, R.layout.activity6_view_item_animated, 500, 100);
+                    startDrag(v, R.layout.activity6_view_item_animated, Constants.DRAGSHADOW_WIDTH_PX, Constants.VIEWITEM_FIXED_HEIGHT_PX);
                 }
                 return false;
             }
@@ -53,19 +53,19 @@ public class ViewGroupAnimatedActivity6 extends Activity {
             @Override
             public boolean onTouch(View v, MotionEvent event) {
                 if (event.getAction() == MotionEvent.ACTION_DOWN) {
-                    startDrag(v, R.layout.activity6_view_group_animated, 500, 200);
+                    startDrag(v, R.layout.activity6_view_group_animated, Constants.DRAGSHADOW_WIDTH_PX, Constants.VIEWGROUP_MIN_HEIGHT_PX);
                 }
                 return false;
             }
         });
     }
 
-    private void startDrag(View view, int shadowRessourceId, int width, int height){
+    private void startDrag(View view, int shadowRessourceId, int shadowWidth, int shadowHeight){
         // which data to pass on drop
-        ClipData clipData = ClipData.newPlainText("ressourceId", String.valueOf(shadowRessourceId) );
+        ClipData clipData = UtilDropHandler.createDragClipData(shadowRessourceId);
 
         //  measure the item view and use it as shadow
-        View.DragShadowBuilder dragShadowBuilder = DropHandler.createDragShadowBuilder(shadowRessourceId, getLayoutInflater(), width, height);
+        View.DragShadowBuilder dragShadowBuilder = UtilDropHandler.createDragShadowBuilder(shadowRessourceId, getLayoutInflater(), shadowWidth, shadowHeight);
 
         // start dragging
         view.startDrag(clipData, dragShadowBuilder, null, 0);

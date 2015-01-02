@@ -49,4 +49,39 @@ public final class Utils {
                 return null;
         }
     }
+
+    /** Replace the view by the other.
+     *
+     * ACHTUNG: it will only copy the LayoutParams from "replaceIt" to "replaceBy" if
+     * replaceBy.mLayoutParams==null
+     *
+     * @param replaceIt
+     * @param replaceBy
+     */
+    public static void replaceView(View replaceIt, View replaceBy){
+        if(replaceIt.getParent() == null || !(replaceIt.getParent() instanceof ViewGroup) ){
+            throw new IllegalStateException(String.format("can not replace view %s in ViewParent %s", replaceIt, replaceIt.getParent() ));
+        }
+
+        // retrieve the parent
+        ViewGroup viewGroup = (ViewGroup) replaceIt.getParent();
+
+        // replace dummy by child. use attachLayoutAnimationParameters, detachViewFromParent
+        ViewGroup.LayoutParams layoutParamsChild = replaceBy.getLayoutParams();
+        if(layoutParamsChild == null){
+            layoutParamsChild = replaceIt.getLayoutParams();
+        }
+
+        int index = viewGroup.indexOfChild(replaceIt);
+        viewGroup.removeView(replaceIt);
+        viewGroup.addView(replaceBy,index, layoutParamsChild);
+
+        // measure
+        int widthMeasureSpec = View.MeasureSpec.makeMeasureSpec(replaceIt.getWidth(), View.MeasureSpec.EXACTLY);
+        int heightMeasureSpec = View.MeasureSpec.makeMeasureSpec(replaceIt.getHeight(), View.MeasureSpec.UNSPECIFIED);
+        replaceBy.measure(widthMeasureSpec, heightMeasureSpec);
+
+        // layout
+        replaceBy.requestLayout();
+    }
 }

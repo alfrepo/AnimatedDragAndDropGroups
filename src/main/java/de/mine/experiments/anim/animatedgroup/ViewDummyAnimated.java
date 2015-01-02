@@ -1,12 +1,16 @@
 package de.mine.experiments.anim.animatedgroup;
 
+import android.content.ClipData;
 import android.content.Context;
 import android.graphics.Color;
 import android.util.Log;
 import android.view.DragEvent;
+import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Toast;
+
+import de.mine.experiments.anim.animatedgroup.command.CommandReplaceView;
 
 /**
  * Created by skip on 10.09.2014.
@@ -48,12 +52,17 @@ public class ViewDummyAnimated extends View implements AbstractFigure, ViewGroup
         // dummy does nothing when it is removed
     }
 
-    public void replaceBy(View view){
-        // TODO me - implement animated replacement of dummy by a new View
-        // grow the dummy to the size of the new view
-        // remove it selfe from parent
-        // add the new view instead
+    public void onDropOnDummy(ViewDummyAnimated dummyTarget, DragEvent dropEvent){
+
+        // retrieve the dragged View
+        ClipData clipData = dropEvent.getClipData();
+        View view = UtilDropHandler.createViewFromClipData(getContext(), clipData, LayoutInflater.from(getContext()));
+
+        // replace the dummy by the dragged View
+        CommandReplaceView commandReplaceView = new CommandReplaceView(getContext(), this, view);
+        commandReplaceView.execute();
     }
+
 
     @Override
     public boolean dispatchDragEvent(DragEvent event) {
@@ -70,7 +79,7 @@ public class ViewDummyAnimated extends View implements AbstractFigure, ViewGroup
 
         if(event.getAction() == DragEvent.ACTION_DROP){
             Toast.makeText(getContext(), "drop", Toast.LENGTH_SHORT).show();
-            DropHandler.onDropOnDummy(this, event);
+            onDropOnDummy(this, event);
         }
 
         super.dispatchDragEvent(event);

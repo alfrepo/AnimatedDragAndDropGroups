@@ -1,64 +1,111 @@
 package de.mine.experiments.anim.animatedgroup.command;
 
+import android.app.Activity;
+
+import junit.framework.Assert;
+
 import java.util.ArrayList;
-import java.util.Collections;
+import java.util.Iterator;
 import java.util.List;
 
 /**
- * Created by skip on 19.10.2014.
+ * Created by skip on 29.12.2014.
  */
 public class Invoker {
-    public static List<Command> undoStack = Collections.synchronizedList(new ArrayList<Command>());
-    public static List<Command> redoStack = Collections.synchronizedList(new ArrayList<Command>());
 
+    public static enum FILTER_RESULT{ DELAY, EXECUTE}
 
-    public static Command executeCommmand(Command command){
-        // start execution
-        undoStack.add(command);
+    // the filters which will be asked before the command is executed
+    List<CommandsDelayFilter> commandFilters = new ArrayList<CommandsDelayFilter>();
 
-        // clear all on new command
-        redoStack.clear();
+    // already delayed commands
+    List<DelayedCommandAndFilter> listDelayedCommands = new ArrayList<DelayedCommandAndFilter>();
 
-        // start
-        command.execute();
+    //activity
+    Activity activity;
 
-        return command;
+    public Invoker(Activity activity){
+        Assert.assertNotNull(activity);
+        this.activity = activity;
     }
 
-    public static Command undoLastCommmand(){
-        if(undoStack.isEmpty()){
-            return null;
+
+    public void executeCommand(final Command command, final ICommandParameters commandParameters){
+
+        // filter
+        for(CommandsDelayFilter commandFilter : commandFilters){
+            if(commandFilter.filter(command) == FILTER_RESULT.DELAY){
+                // add command to the list of delayed commands
+                this.listDelayedCommands.add(new DelayedCommandAndFilter(command, commandFilter, commandParameters));
+                // break the execution
+                return;
+            }
         }
-        // remove last from undo stack
-        Command command = undoStack.remove(undoStack.size()-1);
 
-        // prepend command
-        redoStack.add(0, command);
-
-        // do the undo
-        command.undo();
-
-        // return
-        return command;
+        // start the command on UI thread
+        activity.runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                commandParameters.execute(command);
+            }
+        });
     }
 
-    public static Command redoLastCommmand(){
-        // start execution
 
-        if(redoStack.isEmpty()){
-            return null;
+
+    // DELAYS OF COMMANDS
+
+    public void addFilter(CommandsDelayFilter filter){
+        this.commandFilters.add(filter);
+    }
+
+    public void removeFilter(CommandsDelayFilter filter){
+        this.commandFilters.remove(filter);
+    }
+
+    public void undelay(Class<? extends Command> commandType){
+        // find all delayed commands of this type and execute them again
+        List<DelayedCommandAndFilter> undelayCommands = new ArrayList<DelayedCommandAndFilter>(this.listDelayedCommands);
+
+        // remove commands which do not have the give type
+        if(commandType != null){
+            Iterator<DelayedCommandAndFilter> iterator = undelayCommands.iterator();
+            // iterate all
+            while(iterator.hasNext()){
+                // remove commands with wrong type
+                if(iterator.next().command.getClass().equals(commandType)){
+                    iterator.remove();
+                }
+            }
         }
 
-        // remove last first from redo stack
-        Command command = redoStack.remove(0);
+        // remove all commands from the delayed list
+        this.listDelayedCommands.removeAll(undelayCommands);
 
-        // append it to the undo stack
-        undoStack.add(command);
+        // execute the rest of the commands
+        for(DelayedCommandAndFilter d: undelayCommands){
+            executeCommand(d.command, d.commandParameters);
+        }
+    }
 
-        /* execute command again.
-           it is assumed, that the command remembers it's inbetween state, if the undo was interrupted and goes on now.       */
-        command.execute();
+    public void undelay(){
+        // find all delayed commands and execute them again
+        undelay(null);
+    }
 
-        return command;
+
+
+    // CLASSES
+    public class DelayedCommandAndFilter {
+        public Command command;                         // which command to execute?
+        public ICommandParameters commandParameters;    // which parameters to use for execution?
+        public CommandsDelayFilter filter;          // which filter caused the delay?
+
+
+        public DelayedCommandAndFilter(Command command, CommandsDelayFilter filter, ICommandParameters commandParameters){
+            this.command = command;
+            this.commandParameters = commandParameters;
+            this.filter = filter;
+        }
     }
 }

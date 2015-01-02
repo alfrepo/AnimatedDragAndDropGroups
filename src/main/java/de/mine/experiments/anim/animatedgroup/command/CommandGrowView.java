@@ -5,22 +5,23 @@ import android.animation.ValueAnimator;
 import android.util.Log;
 import android.view.View;
 
+import de.mine.experiments.anim.animatedgroup.Constants;
+
 /**
  * Created by skip on 18.10.2014.
  */
 public class CommandGrowView extends AbstractCommand {
 
     private final View receiverView;
-    private final int startHeight;
+    private int fallbackToThisSizeWhenUndoing = 0;
     private final int finalHeight;
     private final long duration;
 
     private ValueAnimator valueAnimator;
     private Direction direction = Direction.EXECUTING;
 
-    public CommandGrowView(View receiver, int startHeight, int finalHeight, int duration){
+    public CommandGrowView(View receiver, int finalHeight, int duration){
         this.receiverView = receiver;
-        this.startHeight = startHeight;
         this.finalHeight = finalHeight;
         this.duration = duration;
     }
@@ -32,7 +33,6 @@ public class CommandGrowView extends AbstractCommand {
         }
         return false;
     }
-
 
     @Override
     public void execute() {
@@ -51,9 +51,15 @@ public class CommandGrowView extends AbstractCommand {
         }
     }
 
-    private void execute(final Direction animationDirection){
-        int startValue = receiverView.getHeight();
-        Log.d("receiverView","receiverView.getHeight(): "+startValue);
+    public void execute(final Direction animationDirection){
+        // if already executing in the given direction
+        if(this.direction == animationDirection && isRunning()){
+            return;
+        }
+
+        // use measuredHeight since the view may have already been measured but not drawn yet. In this case the Height would be = 0
+        int startValue = receiverView.getMeasuredHeight();
+        Log.d(Constants.LOGD,"receiverView.getHeight(): "+startValue);
 
         int finalValue = finalHeight;
         long currentDuration = duration;
@@ -61,28 +67,25 @@ public class CommandGrowView extends AbstractCommand {
         // remember new direction
         this.direction = animationDirection;
 
-        // swap start and end value if animating backward
         if(animationDirection == Direction.UNDOING){
-            finalValue = 0;
+            // undo by shrinking the view back to its previous height
+            finalValue = this.fallbackToThisSizeWhenUndoing;
         }
 
-        // modify startHeight if in progress
+        // cancel if in progress
         if(valueAnimator != null && valueAnimator.isRunning()){
             // cancel the animation
             valueAnimator.cancel();
-
-            // TODO - recalculate duration. Animation time should be shorter when animating only the half distance, when breaking up prev animation
-            // start the animation with another duration
-//            currentDuration = computeRestNavigationDuration(startValue, finalValue);
+            Log.d(Constants.LOGD, "Cancel previous animation which was already running");
         }
 
 
         // now animate
-        Log.d("draggin",String.format("From %s px to %s px", startValue, finalValue));
-        ValueAnimator va = getAnimator(startValue, finalValue, currentDuration);
+        Log.d(Constants.LOGD,String.format("From %s px to %s px", startValue, finalValue));
+        valueAnimator = getAnimator(startValue, finalValue, currentDuration);
 
         // listen for animation end
-        va.addListener(new Animator.AnimatorListener() {
+        valueAnimator.addListener(new Animator.AnimatorListener() {
 
             @Override
             public void onAnimationStart(Animator animation) {
@@ -114,7 +117,7 @@ public class CommandGrowView extends AbstractCommand {
         });
 
         // start the animationNow
-        va.start();
+        valueAnimator.start();
     }
 
     // explicitely tell the direction
@@ -124,7 +127,7 @@ public class CommandGrowView extends AbstractCommand {
             valueAnimator.cancel();
         }
 
-        // animate dummy height from 0 to childHeight
+        // animate dummy height from current height to final height
         valueAnimator = ValueAnimator.ofInt(startHeight, finalHeight);
         valueAnimator.setDuration(durationOfAnimation);
         valueAnimator.addUpdateListener(new ValueAnimator.AnimatorUpdateListener() {
@@ -139,25 +142,26 @@ public class CommandGrowView extends AbstractCommand {
     }
 
 
+
     // HELPER
 
-
-    private long computeRestNavigationDuration(int startValue, int endValue){
-        int currentDelta = Math.abs(startValue - endValue);
-        int initialDelta = Math.abs(startHeight - finalHeight);
-
-        // max value is the original time
-        double percentage = currentDelta / (initialDelta);
-
-        // the duration is just a part of the original duration
-        long resultingAnimationDuration = Math.round(duration * percentage);
-
-        // interval
-        resultingAnimationDuration = Math.min(resultingAnimationDuration, duration);
-        resultingAnimationDuration = Math.max(resultingAnimationDuration, 0);
-
-        return resultingAnimationDuration;
-    }
+// DELETE
+//    private long computeRestNavigationDuration(int startValue, int endValue){
+//        int currentDelta = Math.abs(startValue - endValue);
+//        int initialDelta = Math.abs(startHeight - finalHeight);
+//
+//        // max value is the original time
+//        double percentage = currentDelta / (initialDelta);
+//
+//        // the duration is just a part of the original duration
+//        long resultingAnimationDuration = Math.round(duration * percentage);
+//
+//        // interval
+//        resultingAnimationDuration = Math.min(resultingAnimationDuration, duration);
+//        resultingAnimationDuration = Math.max(resultingAnimationDuration, 0);
+//
+//        return resultingAnimationDuration;
+//    }
 
     // CLASSES
 

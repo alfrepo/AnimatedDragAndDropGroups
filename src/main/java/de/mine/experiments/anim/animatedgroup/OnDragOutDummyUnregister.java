@@ -12,7 +12,7 @@ import java.util.concurrent.TimeUnit;
 
 /**
  * Drag Listener which will hide the given dummy, when drag leaves view and dummy.
- * Drag out is delayed by {@link de.mine.experiments.anim.animatedgroup.Constants#TIMEOUT_TILL_DUMMYDEACTIVATION_MS}
+ * Drag out is delayed by {@link de.mine.experiments.anim.animatedgroup.Constants#DUMMY_TIMEOUT_TILL_DEACTIVATION_MS}
  */
 public class OnDragOutDummyUnregister implements View.OnDragListener {
 
@@ -68,7 +68,7 @@ public class OnDragOutDummyUnregister implements View.OnDragListener {
                 }
             };
 
-            worker.schedule(runnable, Constants.TIMEOUT_TILL_DUMMYDEACTIVATION_MS, TimeUnit.MILLISECONDS);
+            worker.schedule(runnable, Constants.DUMMY_TIMEOUT_TILL_DEACTIVATION_MS, TimeUnit.MILLISECONDS);
         }
         return false;
     }

@@ -18,7 +18,7 @@ public class ViewItemAnimated extends RelativeLayout implements AbstractFigure, 
 
     private Context context;
     private AbstractFigure parent;
-    private int heightFixed = 100;
+    private int heightFixed = Constants.VIEWITEM_FIXED_HEIGHT_PX;
     private AnimatorOfDummy animatorOfDummy;
     private boolean isDraggingOverThis = false;
     private OnDragOutDummyUnregister onDragOutDummyUnregister;

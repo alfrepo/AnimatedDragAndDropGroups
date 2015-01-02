@@ -1,7 +1,6 @@
 package de.mine.experiments.anim.animatedgroup;
 
 import android.content.Context;
-import android.graphics.Point;
 import android.util.Log;
 import android.view.DragEvent;
 import android.view.View;
@@ -14,15 +13,24 @@ import de.mine.experiments.anim.animatedgroup.command.Command;
 import de.mine.experiments.anim.animatedgroup.command.CommandGrowView;
 
 /**
- * Adds a dummy in an animated way when the method #onDragInAddDummyAnimation() is called
- * Removes the a dummy in an animated way, when method #onDragOutRemoveDummyAnimation() is called
+ * This class is needed, because the {@link de.mine.experiments.anim.animatedgroup.ViewItemAnimated} and {@link de.mine.experiments.anim.animatedgroup.ViewGroupAnimated}
+ * both have dummies, which has to be attached to different parents.
+ * Both have some logic to add, remove the dummy on DragEvents.
+ * This class encapsulates this common logic.
+ *
+ * <ul>
+ *  <li> Creates a dummy lazily in an animated way when the method {@link #onDragInAddDummyAnimation} is called
+ *  <li> Removes the dummy in an animated way, when method {@link #onDragOutRemoveDummyAnimation} is called
+ *  <li> Implements multiple drag listeners on a dummy
+ *  <li> Uses the command to animate the dummy
+ * </ul>
  * Created by skip on 08.11.2014.
  */
 public class AnimatorOfDummy implements IDragInViewIdentifier {
 
     public static final int INITIAL_DUMMY_HEIGHT_BEFORE_EXPANDING = 0;
-    public static final int DUMMY_HEIGHT =  250; // fixed height of dummies before drop
-    public static final int DUMMY_ANIMATION_DURATION =  500; // ms
+    public static final int DUMMY_HEIGHT =  Constants.DUMMY_HEIGHT_PX; // fixed height of dummies
+    public static final int DUMMY_ANIMATION_DURATION =  Constants.DUMMY_TIME_ANIMATION_DURATION_MS; // ms
 
     // retrieve
     private Context context;
@@ -46,7 +54,7 @@ public class AnimatorOfDummy implements IDragInViewIdentifier {
      * @param parentOfDummy - the parent which dummies will be added to
      * */
     public AnimatorOfDummy(Context context, ViewGroup parentOfDummy){
-        this.context = context;
+        this(context);
         attachToParent(parentOfDummy);
     }
 
@@ -58,6 +66,25 @@ public class AnimatorOfDummy implements IDragInViewIdentifier {
      */
     public AnimatorOfDummy(Context context){
         this.context = context;
+        init();
+    }
+
+    private void init(){
+        /* Listen for drag end to deactivate the Listener */
+        addDummyOnDragListener(new View.OnDragListener() {
+            @Override
+            public boolean onDrag(View v, DragEvent event) {
+                // exit if there is not dummy or if the dummy is closed
+                if(viewDummyAnimated == null || commandGrowView==null || viewDummyAnimated.getHeight() == 0){
+                    return false;
+                }
+                // check for drag end and hide the dummy
+                if(event.getAction() == DragEvent.ACTION_DRAG_ENDED){
+                    onDragOutRemoveDummyAnimation();
+                }
+                return false;
+            }
+        });
     }
 
     /**
@@ -131,7 +158,7 @@ public class AnimatorOfDummy implements IDragInViewIdentifier {
             return;
         }
 
-        // lazy creation of dumm on drag in
+        // lazy creation of dummy on drag in
         initDummy(dummyPositionInParent);
 
         // animate the addition of the view
@@ -186,13 +213,16 @@ public class AnimatorOfDummy implements IDragInViewIdentifier {
         int parentWidth = parentOfDummy.getWidth();
 
         // create the dummy command if they are null
-        boolean wasJustInitiatedTheDummy = this.initiatePlaceholderFollowerDummyAndCommand(parentWidth);
+        this.initDummyAndCommand(parentWidth);
         Log.d("anim", "Width: " + parentWidth);
 
         /*  add the dummy to the group.
             It will be removed from the group when the undo animation finishes
             prepend the follower at the very first positon        */
         if (viewDummyAnimated.getParent() == null) {
+            // override the size with initial size of dummy. Important if the dummy already has been visible and now it has it's initial height
+            initDummyParameters(viewDummyAnimated, parentWidth, INITIAL_DUMMY_HEIGHT_BEFORE_EXPANDING);
+
             parentOfDummy.addView(viewDummyAnimated, dummyPositionInParent);
 
             /* after adding  a Child to the parent, when dragging is already happening -
@@ -206,30 +236,27 @@ public class AnimatorOfDummy implements IDragInViewIdentifier {
                 Log.e(ViewGroupAnimatedActivity6.TAG, "Something went wrong - there is no DragEvent to switch new dummy to drag mode");
             }
         }
+    }
 
-        // remove the dummies on animation undo hook
-        if (wasJustInitiatedTheDummy) {
-            // when the command is reverted - the viewDummy should be removed from the group
+    private boolean initDummyAndCommand(int maxDummyWidth){
+        // create the command if necessary
+        if(commandGrowView == null){
+
+            Log.d("isDraggingOverThis", "initDummyAndCommand");
+
+            // create a dummy
+            viewDummyAnimated = createADummy(maxDummyWidth, INITIAL_DUMMY_HEIGHT_BEFORE_EXPANDING);
+
+            // create the command
+            commandGrowView = new CommandGrowView(viewDummyAnimated, DUMMY_HEIGHT, DUMMY_ANIMATION_DURATION);
+
+            // remove the dummy from the parent when the command undo is called
             commandGrowView.addOnUndoFinishedListener(new Command.ListenerCommand() {
                 @Override
                 public void onTrigger() {
                     parentOfDummy.removeView(viewDummyAnimated);
                 }
             });
-        }
-    }
-
-    private boolean initiatePlaceholderFollowerDummyAndCommand(int maxDummyWidth){
-        // create the command if necessary
-        if(commandGrowView == null){
-
-            Log.d("isDraggingOverThis", "initiatePlaceholderFollowerDummyAndCommand");
-
-            // create a dummy
-            viewDummyAnimated = createADummy(INITIAL_DUMMY_HEIGHT_BEFORE_EXPANDING, maxDummyWidth);
-
-            // create the command
-            commandGrowView = new CommandGrowView(viewDummyAnimated, INITIAL_DUMMY_HEIGHT_BEFORE_EXPANDING, DUMMY_HEIGHT, DUMMY_ANIMATION_DURATION);
 
             return true;
         }
@@ -237,20 +264,38 @@ public class AnimatorOfDummy implements IDragInViewIdentifier {
     }
 
 
-    private ViewDummyAnimated createADummy(int initialDummyHeight, int dummyWidth) {
+    private ViewDummyAnimated createADummy(int initialDummyWidth, int initialDummyHeight) {
         ViewDummyAnimated dummy  = new ViewDummyAnimated(context);
-        addOnDragListener(dummy);
-        int itemDummyWidth = measureHowLargeTheViewWouldBeAsChild(dummy, initialDummyHeight, dummyWidth).x;
+        setDummyOnDragListener(dummy);
 
         // initial lp to avoid nullPointerException
         // assign the height of 0 to the dummy. WIll expand it soon
-        ViewGroup.LayoutParams lp = new ViewGroup.LayoutParams(itemDummyWidth, initialDummyHeight);
-        dummy.setLayoutParams(lp);
+        initDummyParameters(dummy, initialDummyWidth, initialDummyHeight);
 
         return dummy;
     }
 
-    private void addOnDragListener(ViewDummyAnimated dummy){
+    private void initDummyParameters(ViewDummyAnimated dummy, int initialDummyWidth, int initialDummyHeight){
+        ViewGroup.LayoutParams lp = dummy.getLayoutParams();
+
+        if(lp == null){
+            lp = new ViewGroup.LayoutParams(initialDummyWidth, initialDummyHeight);
+        }
+        dummy.setLayoutParams(lp);
+
+        int widthMsaureSpec = View.MeasureSpec.makeMeasureSpec(initialDummyWidth, View.MeasureSpec.EXACTLY);
+        int heightMsaureSpec = View.MeasureSpec.makeMeasureSpec(initialDummyHeight, View.MeasureSpec.EXACTLY);
+
+        // measure
+        dummy.measure(widthMsaureSpec, heightMsaureSpec);
+
+        // layout
+        // no layout - measuring is enough to store the new data in the view
+    }
+
+    private void setDummyOnDragListener(ViewDummyAnimated dummy){
+        /** This should be the only way where a DragListener is added to the dummy.
+         * Because otherwise it will be overridden */
         dummy.setOnDragListener(new View.OnDragListener() {
             @Override
             public boolean onDrag(View v, DragEvent event) {
@@ -264,20 +309,21 @@ public class AnimatorOfDummy implements IDragInViewIdentifier {
         });
     }
 
-    public Point measureHowLargeTheViewWouldBeAsChild(View child, int exactHeightAdvice, int dummyWidth){
-        // retrieve the measure specs width / height . Use matchparent / unspecified
-        // provide infos how the this view as parent wants to see the child
-        int measureSpecWidth = View.MeasureSpec.makeMeasureSpec(dummyWidth, View.MeasureSpec.AT_MOST);
-        int measureSpecHeight = View.MeasureSpec.makeMeasureSpec(exactHeightAdvice, View.MeasureSpec.EXACTLY);
-
-        // provide infos how the child wants to lay out itselfe (normally via xml)
-        ViewGroup.LayoutParams lpChild = new ViewGroup.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
-        child.setLayoutParams(lpChild);
-
-        // measure the child
-        child.measure(measureSpecWidth, measureSpecHeight);
-        final int childWidth = child.getMeasuredWidth();
-        final int childHeight = child.getMeasuredHeight();
-        return new Point(childWidth, childHeight);
-    }
+    // use fixed size for the dummy. No need to measure anymore
+//    private Point measureHowLargeTheViewWouldBeAsChild(View child,int dummyWidth, int exactHeightAdvice ){
+//        // retrieve the measure specs width / height . Use matchparent / unspecified
+//        // provide infos how the this view as parent wants to see the child
+//        int measureSpecWidth = View.MeasureSpec.makeMeasureSpec(dummyWidth, View.MeasureSpec.AT_MOST);
+//        int measureSpecHeight = View.MeasureSpec.makeMeasureSpec(exactHeightAdvice, View.MeasureSpec.EXACTLY);
+//
+//        // provide infos how the child wants to lay out itselfe (normally via xml)
+//        ViewGroup.LayoutParams lpChild = new ViewGroup.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+//        child.setLayoutParams(lpChild);
+//
+//        // measure the child
+//        child.measure(measureSpecWidth, measureSpecHeight);
+//        final int childWidth = child.getMeasuredWidth();
+//        final int childHeight = child.getMeasuredHeight();
+//        return new Point(childWidth, childHeight);
+//    }
 }

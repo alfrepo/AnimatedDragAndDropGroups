@@ -1,8 +1,5 @@
 package de.mine.experiments.anim.animatedgroup;
 
-import android.animation.Animator;
-import android.animation.AnimatorListenerAdapter;
-import android.animation.ValueAnimator;
 import android.content.Context;
 import android.graphics.Color;
 import android.util.AttributeSet;
@@ -28,10 +25,11 @@ public class ViewGroupAnimated extends ViewGroup implements AbstractViewGroup, V
     // is triggered when the drag leaves the view or dummy to hide the dummy
     private OnDragOutDummyUnregister onDragOutDummyUnregister;
 
-    private int minHeight = 100;
+    private int minHeight = Constants.VIEWGROUP_MIN_HEIGHT_PX;
     private int minWidth = 100;
-    private int mPadding_left = 50;
-    private int mPadding_top = 50;
+    private int mPadding_left = Constants.VIEWGROUP_PADDING_LEFT_PX;
+    private int mPadding_top = Constants.VIEWGROUP_PADDING_TOP_PX;
+    private int mPadding_bottom = Constants.VIEWGROUP_PADDING_BOTTOM_PX;
 
     private boolean isDraggingOverThis = false;
 
@@ -73,7 +71,7 @@ public class ViewGroupAnimated extends ViewGroup implements AbstractViewGroup, V
         setMinimumWidth(minWidth);
 
         // padding
-        setPadding(mPadding_left, mPadding_top, 0, 0);
+        setPadding(mPadding_left, mPadding_top, 0, mPadding_bottom);
 
         setRandomBg();
     }
@@ -83,7 +81,7 @@ public class ViewGroupAnimated extends ViewGroup implements AbstractViewGroup, V
         return new OnHierarchyChangeListener() {
             @Override
             public void onChildViewAdded(View parent, View child) {
-                // notify  child if, that it was added to a new parent. Let them REMOVE Dummies
+                // notify child if, that it was added to a new parent. Let them REMOVE Dummies
                 ((OnHierarchyChangeListener)child).onChildViewAdded(parent, child);
             }
 
@@ -154,10 +152,6 @@ public class ViewGroupAnimated extends ViewGroup implements AbstractViewGroup, V
     protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
         super.onMeasure(widthMeasureSpec, heightMeasureSpec);
 
-        if(getChildCount() == 1){
-            Log.d("yes","ooooo - ooooo");
-        }
-
         int resultWidth = getMeasuredWidth();
         int resultHeight = getMeasuredHeight();
 
@@ -197,7 +191,6 @@ public class ViewGroupAnimated extends ViewGroup implements AbstractViewGroup, V
          * - measures them with the given measureSpec (what the parent told us to be!) There will be problems if parent tells to be max. x and all children will try to fill the child
          *  - calls measureChild() which considers padding of the current view
          */
-        // TODO use get getChildMeasureSpec()
         measureChildren(widthMeasureSpec, heightMeasureSpec);
 
 
@@ -295,63 +288,21 @@ public class ViewGroupAnimated extends ViewGroup implements AbstractViewGroup, V
         if(!(child instanceof  OnHierarchyChangeListener)){
             throw new IllegalArgumentException(String.format("The child %s has to implemement OnHierarchyChangeListener", child.getClass().getSimpleName()));
         }
+        // enforce height of the group to have the value WRAP_CONTENT
+        // otherwise the ViewGroup will not react on (animated) changes of child heights
+        if(getLayoutParams() != null){
+            getLayoutParams().height = LayoutParams.WRAP_CONTENT;
+        }
+
         super.addView(child);
     }
 
-    public void addViewAnimated(final View child) {
-        // measure the child as x height.
-
-        // retrieve the measure specs width / height . Use matchparent / unspecified
-            // provide infos how the this view as parent wants to see the child
-            int measureSpecWidth = MeasureSpec.makeMeasureSpec(getMeasuredWidth(), MeasureSpec.AT_MOST);
-            int measureSpecHeight = MeasureSpec.makeMeasureSpec(0 ,MeasureSpec.EXACTLY);
-            // provide infos how the child wants to lay out itselfe (normally via xml)
-            LayoutParams lpChild = new LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.WRAP_CONTENT);
-            child.setLayoutParams(lpChild);
-            // measure the child
-            child.measure(measureSpecWidth, measureSpecHeight);
-            final int childWidth = child.getMeasuredWidth();
-            final int childHeight = child.getMeasuredHeight();
-
-        // add dummy with height 0
-            final ViewDummyAnimated itemDummy = new ViewDummyAnimated(context);
-            // initial lp to avoid nullPointerException
-            // assign the height of 0 to the dummy. WIll expand it soon
-            LayoutParams lp = new LayoutParams(childWidth, 0);
-            itemDummy.setLayoutParams(lp);
-            addView(itemDummy);
-
-        // animate dummy height from 0 to childHeight
-            ValueAnimator va = ValueAnimator.ofInt(0, childHeight);
-            va.setDuration(200);
-            va.addUpdateListener(new ValueAnimator.AnimatorUpdateListener() {
-                public void onAnimationUpdate(ValueAnimator animation) {
-                    Integer value = (Integer) animation.getAnimatedValue();
-                    itemDummy.getLayoutParams().height = value.intValue();
-                    itemDummy.requestLayout();
-                }
-            });
-
-            va.addListener(new AnimatorListenerAdapter() {
-                           @Override
-                           public void onAnimationEnd(Animator animation) {
-                               // replace dummy by child. use attachLayoutAnimationParameters, detachViewFromParent
-                               LayoutParams layoutParamsChild = child.getLayoutParams();
-                               int index = indexOfChild(itemDummy);
-                               detachViewFromParent(itemDummy);
-                               attachViewToParent(child,index, layoutParamsChild);
-                               child.requestLayout();
-                           }
-            });
-            va.start();
-    }
 
 
     // INTERFACES
 
     @Override
     public List<AbstractFigure> getChildren() {
-        // TODO alf
         return null;
     }
 
