@@ -14,15 +14,17 @@ public class CommandsDelayFilterDrop extends CommandsDelayFilter {
 
         // listen for the commandReplaceView to be ready
         commandReplaceView.addOnExecutionSucessfullyFinishedListener(
-        new Command.ListenerCommand() {
-            @Override
-            public void onTrigger() {
-                // remove itself from the invoker
-                invoker.removeFilter(CommandsDelayFilterDrop.this);
-                // undelay the CommandReplaceView commands
-                invoker.undelay(delayedCommandType);
+            new Command.ListenerCommand() {
+                @Override
+                public void onTrigger() {
+                    // remove itself from the invoker
+                    invoker.removeFilter(CommandsDelayFilterDrop.this);
+
+                    // undelay the CommandReplaceView commands
+                    invoker.undelay(delayedCommandType);
+                }
             }
-        });
+        );
     }
 
     public Invoker.FILTER_RESULT filter(Command command) {

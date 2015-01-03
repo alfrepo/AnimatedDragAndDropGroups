@@ -51,7 +51,7 @@ public class CommandGrowView extends AbstractCommand {
         }
     }
 
-    public void execute(final Direction animationDirection){
+    protected void execute(final Direction animationDirection){
         // if already executing in the given direction
         if(this.direction == animationDirection && isRunning()){
             return;
@@ -165,7 +165,7 @@ public class CommandGrowView extends AbstractCommand {
 
     // CLASSES
 
-    enum Direction {
+    public enum Direction {
         EXECUTING, UNDOING;
 
         public Direction toggle(){

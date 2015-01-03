@@ -55,11 +55,11 @@ public class OnDragOutDummyUnregister implements View.OnDragListener {
                     // check whether over dummy or over current Item
                     if (!dragInViewIdentifier.isDraggingWithinView() && !animatorOfDummyToMonitorDragOut.isDraggingWithinView()) {
 
-                        // start on ui thread if yes : onDragOutRemoveDummyAnimation();
+                        // start on ui thread if yes : onDragOutDragEndRemoveDummyAnimation();
                         v.post(new Runnable() {
                             @Override
                             public void run() {
-                                Log.d("isDraggingOverThis", "onDragOutRemoveDummyAnimation()");
+                                Log.d("isDraggingOverThis", "onDragOutDragEndRemoveDummyAnimation()");
                                 onDragOutRemoveDummyAnimation();
                             }
                         });
@@ -76,7 +76,7 @@ public class OnDragOutDummyUnregister implements View.OnDragListener {
     private void onDragOutRemoveDummyAnimation(){
         for(AnimatorOfDummy dummyAnimator: animatorOfDummiesToHide){
             // pass onDragOut to the dummyAnimator and make it hide the dummy
-            dummyAnimator.onDragOutRemoveDummyAnimation();
+            dummyAnimator.onDragOutDragEndRemoveDummyAnimation();
         }
     }
 }

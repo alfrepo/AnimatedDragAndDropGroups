@@ -125,7 +125,7 @@ public class ViewItemAnimated extends RelativeLayout implements AbstractFigure, 
 
     private void onDragOutRemoveDummyAnimation(){
         if(animatorOfDummy != null){
-             animatorOfDummy.onDragOutRemoveDummyAnimation();
+             animatorOfDummy.onDragOutDragEndRemoveDummyAnimation();
         }
     }
 

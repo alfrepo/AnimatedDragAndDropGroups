@@ -73,7 +73,7 @@ public class Invoker {
             // iterate all
             while(iterator.hasNext()){
                 // remove commands with wrong type
-                if(iterator.next().command.getClass().equals(commandType)){
+                if(!iterator.next().command.getClass().equals(commandType)){
                     iterator.remove();
                 }
             }

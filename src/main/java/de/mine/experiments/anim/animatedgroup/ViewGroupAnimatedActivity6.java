@@ -8,6 +8,7 @@ import android.view.View;
 import android.widget.LinearLayout;
 
 import de.mine.experiments.R;
+import de.mine.experiments.anim.animatedgroup.command.Invoker;
 
 public class ViewGroupAnimatedActivity6 extends Activity {
 
@@ -35,6 +36,9 @@ public class ViewGroupAnimatedActivity6 extends Activity {
         viewGroupAnimated = (ViewGroupAnimated) findViewById(R.id.group2);
 
         initDragItemListener();
+
+        // init the Context. WIll switch to DI here
+        Context.invoker = new Invoker(this);
     }
 
     void initDragItemListener() {

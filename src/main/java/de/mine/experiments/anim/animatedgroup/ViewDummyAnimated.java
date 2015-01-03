@@ -11,6 +11,8 @@ import android.view.ViewGroup;
 import android.widget.Toast;
 
 import de.mine.experiments.anim.animatedgroup.command.CommandReplaceView;
+import de.mine.experiments.anim.animatedgroup.command.CommandReplaceViewParameters;
+import de.mine.experiments.anim.animatedgroup.command.CommandsDelayFilterDrop;
 
 /**
  * Created by skip on 10.09.2014.
@@ -60,7 +62,13 @@ public class ViewDummyAnimated extends View implements AbstractFigure, ViewGroup
 
         // replace the dummy by the dragged View
         CommandReplaceView commandReplaceView = new CommandReplaceView(getContext(), this, view);
-        commandReplaceView.execute();
+
+        // TODO skip - use Invoker to have the possibility to delay command execution
+//      commandReplaceView.execute();
+        // install a delay filter which will delay grow commands
+        de.mine.experiments.anim.animatedgroup.Context.invoker.addFilter(new CommandsDelayFilterDrop(de.mine.experiments.anim.animatedgroup.Context.invoker, commandReplaceView));
+        // make invoker execute the replace command
+        de.mine.experiments.anim.animatedgroup.Context.invoker.executeCommand(commandReplaceView, new CommandReplaceViewParameters(CommandReplaceView.DIRECTION.EXECUTE));
     }
 
 

@@ -53,7 +53,7 @@ public class CommandReplaceView extends AbstractCommand {
         return false;
     }
 
-    private void execute(DIRECTION direction){
+    protected void execute(final DIRECTION direction){
         View tempreplaceIt = replaceIt;
         View tempreplaceBy = replaceBy;
 
@@ -75,14 +75,10 @@ public class CommandReplaceView extends AbstractCommand {
 
         // replace view by dummy. Keep size
         Utils.replaceView(tempreplaceIt, viewDummyAnimated);
-        // now measure the dummy to initialize it's height
 
 
         // MEASURING
-        // measure how large the replaceBy will be within the new ViewGroup
-        // measure current view and swap view
-
-         // width won't change
+        // width won't change
         int widthReplaceIt  = replaceIt.getWidth();
         // measure spec
         int measureSpecWidth = View.MeasureSpec.makeMeasureSpec(widthReplaceIt, View.MeasureSpec.AT_MOST);
@@ -99,13 +95,20 @@ public class CommandReplaceView extends AbstractCommand {
         commandGrowView.execute();
 
         // now, when the dummy has reached the intended size - replace it by the replaceBy
-        // TODO move the replacement to the callback of prev command
-        //Utils.replaceView(viewDummyAnimated, tempreplaceBy);
-        final View finalViewReplaceBy = tempreplaceBy;
+        final View finalTempreplaceBy = tempreplaceBy;
         commandGrowView.addOnExecutionSucessfullyFinishedListener(new ListenerCommand() {
             @Override
             public void onTrigger() {
-                Utils.replaceView(viewDummyAnimated, finalViewReplaceBy);
+                Utils.replaceView(viewDummyAnimated, finalTempreplaceBy);
+
+                // notify that we are finished
+                if(direction.equals(DIRECTION.EXECUTE)){
+                    notifyOnExecutionSuccessfullyFinishsListener();
+
+                }else if(direction.equals(DIRECTION.UNDO)){
+                    notifyOnUndoFinishsListener();
+                }
+
             }
         });
     }

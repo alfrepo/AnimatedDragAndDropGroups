@@ -11,6 +11,7 @@ import java.util.List;
 
 import de.mine.experiments.anim.animatedgroup.command.Command;
 import de.mine.experiments.anim.animatedgroup.command.CommandGrowView;
+import de.mine.experiments.anim.animatedgroup.command.CommandGrowViewParameters;
 
 /**
  * This class is needed, because the {@link de.mine.experiments.anim.animatedgroup.ViewItemAnimated} and {@link de.mine.experiments.anim.animatedgroup.ViewGroupAnimated}
@@ -20,7 +21,7 @@ import de.mine.experiments.anim.animatedgroup.command.CommandGrowView;
  *
  * <ul>
  *  <li> Creates a dummy lazily in an animated way when the method {@link #onDragInAddDummyAnimation} is called
- *  <li> Removes the dummy in an animated way, when method {@link #onDragOutRemoveDummyAnimation} is called
+ *  <li> Removes the dummy in an animated way, when method {@link #onDragOutDragEndRemoveDummyAnimation} is called
  *  <li> Implements multiple drag listeners on a dummy
  *  <li> Uses the command to animate the dummy
  * </ul>
@@ -80,7 +81,7 @@ public class AnimatorOfDummy implements IDragInViewIdentifier {
                 }
                 // check for drag end and hide the dummy
                 if(event.getAction() == DragEvent.ACTION_DRAG_ENDED){
-                    onDragOutRemoveDummyAnimation();
+                    onDragOutDragEndRemoveDummyAnimation();
                 }
                 return false;
             }
@@ -162,15 +163,20 @@ public class AnimatorOfDummy implements IDragInViewIdentifier {
         initDummy(dummyPositionInParent);
 
         // animate the addition of the view
-        commandGrowView.execute();
+        // TODO skip - use Invoker
+//        commandGrowView.execute();
+        de.mine.experiments.anim.animatedgroup.Context.invoker.executeCommand(commandGrowView, new CommandGrowViewParameters(CommandGrowView.Direction.EXECUTING));
     }
+
 
     /**
      * notify about dragOut, so that the dummy may be removed from parent
      * */
-    public void onDragOutRemoveDummyAnimation(){
+    public void onDragOutDragEndRemoveDummyAnimation(){
         if(viewDummyAnimated != null){
-            commandGrowView.undo();
+            // TODO skip - use Invoker
+//          commandGrowView.undo();
+            de.mine.experiments.anim.animatedgroup.Context.invoker.executeCommand(commandGrowView, new CommandGrowViewParameters(CommandGrowView.Direction.UNDOING));
         }
     }
 
