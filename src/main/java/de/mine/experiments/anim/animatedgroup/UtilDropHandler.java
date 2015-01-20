@@ -92,8 +92,7 @@ public class UtilDropHandler {
 
         //remove the replaceBy from its old parent
         Utils.removeFromParent(replaceBy);
-        replaceItParent.addView(replaceBy, index-1, layoutParamsChild);
-
+        replaceItParent.addView(replaceBy, index, layoutParamsChild);
 
         // measure
         int widthMeasureSpec = View.MeasureSpec.makeMeasureSpec(replaceIt.getWidth(), View.MeasureSpec.EXACTLY);

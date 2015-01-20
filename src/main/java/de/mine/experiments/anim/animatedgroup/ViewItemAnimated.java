@@ -48,7 +48,6 @@ public class ViewItemAnimated extends RelativeLayout implements AbstractFigure, 
 
     private void init(Context context){
         this.context = context;
-        setRandomBg();
 
         // create a dummy, but do not attach it to a parent yet. Will attach later
         this.animatorOfDummy = new AnimatorOfDummy(context);
@@ -64,6 +63,8 @@ public class ViewItemAnimated extends RelativeLayout implements AbstractFigure, 
         // set layout
         LayoutInflater inflater = LayoutInflater.from(context);
         inflater.inflate(R.layout.activity6_view_item_animated, this);
+
+        setRandomBg();
 
         // every ViewGroup should have its own id
         setId(UUID.randomUUID().hashCode());
@@ -177,7 +178,8 @@ public class ViewItemAnimated extends RelativeLayout implements AbstractFigure, 
         int r = ((int) (Math.random()*255)) ;
         int g = ((int) (Math.random()*255)) ;
         int b = ((int) (Math.random()*255)) ;
-        setBackgroundColor(Color.argb(255, r, g, b));
+        View mainView = findViewById(R.id.linearLayout);
+        mainView.setBackgroundColor(Color.argb(255, r, g, b));
     }
 
 }
