@@ -33,6 +33,9 @@ public class AnimatorOfDummy implements IDragInViewIdentifier {
     public static final int DUMMY_HEIGHT =  Constants.DUMMY_HEIGHT_PX; // fixed height of dummies
     public static final int DUMMY_ANIMATION_DURATION =  Constants.DUMMY_TIME_ANIMATION_DURATION_MS; // ms
 
+    // manual mode - in this mode the dummy is controlled explicitely not by drag events
+    private boolean isEnabled = true;
+
     // retrieve
     private Context context;
     private ViewGroup parentOfDummy;
@@ -143,9 +146,8 @@ public class AnimatorOfDummy implements IDragInViewIdentifier {
     }
 
     /** The AnimatorOfDummy has to be notified about drag end, to remove the dummy from the parent.
-     *  @param dragEvent
      */
-    public void onDragEnded(DragEvent dragEvent){
+    public void onDragEnded(){
         this.dragEvent = null;
     }
 
@@ -154,6 +156,13 @@ public class AnimatorOfDummy implements IDragInViewIdentifier {
      * @param dummyPositionInParent
      */
     public void onDragInAddDummyAnimation(int dummyPositionInParent) {
+        // in manually mode - do not try to init a dummy
+        if(!isEnabled){
+            Log.d(Constants.LOGD, "The view is in disabled mode. No dummy will be initiated.");
+            return;
+        }
+
+        // no parent yet
         if(parentOfDummy == null){
             Log.e(Constants.LOGE, "The Parent should be set by using #attachToParent(). Otherwise no animation will occur.");
             return;
@@ -163,19 +172,23 @@ public class AnimatorOfDummy implements IDragInViewIdentifier {
         initDummy(dummyPositionInParent);
 
         // animate the addition of the view
-        // TODO skip - use Invoker
-//        commandGrowView.execute();
         de.mine.experiments.anim.animatedgroup.Context.invoker.executeCommand(commandGrowView, new CommandGrowViewParameters(CommandGrowView.Direction.EXECUTING));
     }
 
+    public void setEnabled(boolean isEnabled){
+        this.isEnabled = isEnabled;
+    }
 
     /**
      * notify about dragOut, so that the dummy may be removed from parent
      * */
     public void onDragOutDragEndRemoveDummyAnimation(){
+        // in manually mode - do not try to init a dummy
+        if(!isEnabled){
+            Log.d(Constants.LOGD, "The view is in disabled mode. No dummy will be shrinked");
+            return;
+        }
         if(viewDummyAnimated != null){
-            // TODO skip - use Invoker
-//          commandGrowView.undo();
             de.mine.experiments.anim.animatedgroup.Context.invoker.executeCommand(commandGrowView, new CommandGrowViewParameters(CommandGrowView.Direction.UNDOING));
         }
     }
@@ -213,14 +226,52 @@ public class AnimatorOfDummy implements IDragInViewIdentifier {
         return viewDummyAnimated;
     }
 
+    /** Returns the dummy or creates a dummy on the position of the given view.
+     * @param viewToReplaceByDummy - on this position the view will be created
+     * @return
+     */
+    public ViewDummyAnimated getViewDummyAnimatedInitIfNecessary(View viewToReplaceByDummy) {
+        ViewGroup viewGroup = (ViewGroup)viewToReplaceByDummy.getParent();
+        int indexInParent;
+        for(indexInParent=0; indexInParent<viewGroup.getChildCount(); indexInParent++){
+            if(viewGroup.getChildAt(indexInParent).equals(viewToReplaceByDummy)){
+                 break;
+            }
+        }
+        // here now create the view dummy on the position of the given view which needs to be replaced
+        return getViewDummyAnimatedInitIfNecessary(viewGroup, indexInParent);
+    }
+
+    public ViewDummyAnimated getViewDummyAnimatedInitIfNecessary(ViewGroup viewParent, int indexInParent) {
+        if(viewDummyAnimated == null){
+            attachToParent(viewParent);
+            initDummy(indexInParent);
+        }
+        return viewDummyAnimated;
+    }
+
+    /** The dummy may be removed e.g. to be created on the next drag in! The method removes the dummy from its parent and from Animator     */
+    public void removeDummy(){
+        // remove the dummy from parent
+        if(viewDummyAnimated != null && viewDummyAnimated.getParent() !=null){
+            ((ViewGroup)viewDummyAnimated.getParent().getParent()).removeView(viewDummyAnimated);
+        }
+        // forget the dummy
+        this.viewDummyAnimated = null;
+
+    }
+
     // PRIVATE
 
+    /** Creates a new dummy and initializes it into drag mode - notifyChildOfDrag
+     * @param dummyPositionInParent - the position of view in dummy
+     */
     private void initDummy(int dummyPositionInParent) {
         int parentWidth = parentOfDummy.getWidth();
 
         // create the dummy command if they are null
         this.initDummyAndCommand(parentWidth);
-        Log.d("anim", "Width: " + parentWidth);
+        Log.d(Constants.LOGD, "Width: " + parentWidth);
 
         /*  add the dummy to the group.
             It will be removed from the group when the undo animation finishes
@@ -239,16 +290,16 @@ public class AnimatorOfDummy implements IDragInViewIdentifier {
             if(dragEvent != null){
                 parentOfDummy.dispatchDragEvent(dragEvent);
             }else{
-                Log.e(ViewGroupAnimatedActivity6.TAG, "Something went wrong - there is no DragEvent to switch new dummy to drag mode");
+                Log.e(Constants.LOGE, "Something went wrong - there is no DragEvent to switch new dummy to drag mode");
             }
         }
     }
 
     private boolean initDummyAndCommand(int maxDummyWidth){
         // create the command if necessary
-        if(commandGrowView == null){
+        if(viewDummyAnimated == null || commandGrowView == null){
 
-            Log.d("isDraggingOverThis", "initDummyAndCommand");
+            Log.d(Constants.LOGD, "initDummyAndCommand");
 
             // create a dummy
             viewDummyAnimated = createADummy(maxDummyWidth, INITIAL_DUMMY_HEIGHT_BEFORE_EXPANDING);
@@ -315,21 +366,4 @@ public class AnimatorOfDummy implements IDragInViewIdentifier {
         });
     }
 
-    // use fixed size for the dummy. No need to measure anymore
-//    private Point measureHowLargeTheViewWouldBeAsChild(View child,int dummyWidth, int exactHeightAdvice ){
-//        // retrieve the measure specs width / height . Use matchparent / unspecified
-//        // provide infos how the this view as parent wants to see the child
-//        int measureSpecWidth = View.MeasureSpec.makeMeasureSpec(dummyWidth, View.MeasureSpec.AT_MOST);
-//        int measureSpecHeight = View.MeasureSpec.makeMeasureSpec(exactHeightAdvice, View.MeasureSpec.EXACTLY);
-//
-//        // provide infos how the child wants to lay out itselfe (normally via xml)
-//        ViewGroup.LayoutParams lpChild = new ViewGroup.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
-//        child.setLayoutParams(lpChild);
-//
-//        // measure the child
-//        child.measure(measureSpecWidth, measureSpecHeight);
-//        final int childWidth = child.getMeasuredWidth();
-//        final int childHeight = child.getMeasuredHeight();
-//        return new Point(childWidth, childHeight);
-//    }
 }

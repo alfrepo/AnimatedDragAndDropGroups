@@ -1,7 +1,6 @@
 package de.mine.experiments.anim.animatedgroup;
 
 import android.app.Activity;
-import android.content.ClipData;
 import android.os.Bundle;
 import android.view.MotionEvent;
 import android.view.View;
@@ -11,8 +10,6 @@ import de.mine.experiments.R;
 import de.mine.experiments.anim.animatedgroup.command.Invoker;
 
 public class ViewGroupAnimatedActivity6 extends Activity {
-
-    public static final String TAG = "applog";
 
     View buttonDragItem;
     View buttonDragGroup;
@@ -39,6 +36,8 @@ public class ViewGroupAnimatedActivity6 extends Activity {
 
         // init the Context. WIll switch to DI here
         Context.invoker = new Invoker(this);
+        Context.activity = this;
+
     }
 
     void initDragItemListener() {
@@ -65,14 +64,8 @@ public class ViewGroupAnimatedActivity6 extends Activity {
     }
 
     private void startDrag(View view, int shadowRessourceId, int shadowWidth, int shadowHeight){
-        // which data to pass on drop
-        ClipData clipData = UtilDropHandler.createDragClipData(shadowRessourceId);
-
-        //  measure the item view and use it as shadow
-        View.DragShadowBuilder dragShadowBuilder = UtilDropHandler.createDragShadowBuilder(shadowRessourceId, getLayoutInflater(), shadowWidth, shadowHeight);
-
         // start dragging
-        view.startDrag(clipData, dragShadowBuilder, null, 0);
+        DragController.create().startDragFromToolbar(view, shadowRessourceId, shadowWidth, shadowHeight, getLayoutInflater());
     }
 
 }

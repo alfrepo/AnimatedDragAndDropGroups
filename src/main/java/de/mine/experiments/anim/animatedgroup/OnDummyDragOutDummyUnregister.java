@@ -14,7 +14,7 @@ import java.util.concurrent.TimeUnit;
  * Drag Listener which will hide the given dummy, when drag leaves view and dummy.
  * Drag out is delayed by {@link de.mine.experiments.anim.animatedgroup.Constants#DUMMY_TIMEOUT_TILL_DEACTIVATION_MS}
  */
-public class OnDragOutDummyUnregister implements View.OnDragListener {
+public class OnDummyDragOutDummyUnregister implements View.OnDragListener {
 
     private static final ScheduledExecutorService worker = Executors.newSingleThreadScheduledExecutor();
 
@@ -24,6 +24,7 @@ public class OnDragOutDummyUnregister implements View.OnDragListener {
     // the dummy which is spawn by the owner view and should be hidden on exit of both
     private AnimatorOfDummy animatorOfDummyToMonitorDragOut;
 
+    // animator of dummies
     private AnimatorOfDummy[] animatorOfDummiesToHide;
 
     /**
@@ -32,7 +33,7 @@ public class OnDragOutDummyUnregister implements View.OnDragListener {
      * @param animatorOfDummyToMonitorDragOut - dummy to check, when drag is moved out of it
      * @param animatorOfDummiesToHide - those dummies will be hidden when the drag out happens
      */
-    public OnDragOutDummyUnregister(IDragInViewIdentifier dragInViewIdentifierToMonitorDragOut, AnimatorOfDummy animatorOfDummyToMonitorDragOut, AnimatorOfDummy[] animatorOfDummiesToHide) {
+    public OnDummyDragOutDummyUnregister(IDragInViewIdentifier dragInViewIdentifierToMonitorDragOut, AnimatorOfDummy animatorOfDummyToMonitorDragOut, AnimatorOfDummy[] animatorOfDummiesToHide) {
         Assert.assertNotNull(dragInViewIdentifierToMonitorDragOut);
         Assert.assertNotNull(animatorOfDummyToMonitorDragOut);
         Assert.assertNotNull(animatorOfDummiesToHide);
@@ -52,19 +53,19 @@ public class OnDragOutDummyUnregister implements View.OnDragListener {
             Runnable runnable = new Runnable() {
                 @Override
                 public void run() {
-                    // check whether over dummy or over current Item
-                    if (!dragInViewIdentifier.isDraggingWithinView() && !animatorOfDummyToMonitorDragOut.isDraggingWithinView()) {
+                // check whether over dummy or over current Item
+                if (!dragInViewIdentifier.isDraggingWithinView() && !animatorOfDummyToMonitorDragOut.isDraggingWithinView()) {
 
-                        // start on ui thread if yes : onDragOutDragEndRemoveDummyAnimation();
-                        v.post(new Runnable() {
-                            @Override
-                            public void run() {
-                                Log.d("isDraggingOverThis", "onDragOutDragEndRemoveDummyAnimation()");
-                                onDragOutRemoveDummyAnimation();
-                            }
-                        });
+                    // start on ui thread if yes : onDragOutDragEndRemoveDummyAnimation();
+                    v.post(new Runnable() {
+                        @Override
+                        public void run() {
+                            Log.d(Constants.LOGD, "onDragOutDragEndRemoveDummyAnimation()");
+                            onDragOutRemoveDummyAnimation();
+                        }
+                    });
 
-                    }
+                }
                 }
             };
 

@@ -1,13 +1,9 @@
 package de.mine.experiments.anim.animatedgroup;
 
 import android.content.ClipData;
-import android.content.Context;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-
-import de.mine.experiments.R;
 
 /**
  * Handles drop on Views.
@@ -55,9 +51,6 @@ public class UtilDropHandler {
     }
 
 
-    // TODO skip - implement a mechanism, which will watch at the scheduled commands and do the drop and hiding
-
-
     /**
      * Schedule dropping the dummy. Will replace the the dummy by the View from ClipData
      */
@@ -72,39 +65,55 @@ public class UtilDropHandler {
 
     }
 
-    public static ClipData createDragClipData(Integer ressourceIdDraggedView) {
-        Log.d(ViewGroupAnimatedActivity6.TAG, ""+ressourceIdDraggedView);
-        return ClipData.newPlainText(CLIPDATA_KEY_DRAG_VIEW_RESSOURCE_ID, String.valueOf(ressourceIdDraggedView) );
-    }
 
-    public static View createViewFromClipData(Context context, ClipData clipData, LayoutInflater layoutInflater) {
-
-        // check the label
-        if(!clipData.getDescription().getLabel().equals(CLIPDATA_KEY_DRAG_VIEW_RESSOURCE_ID)){
-            throw new IllegalArgumentException("Wrong clipData passed");
+    /** Replaces the view in an NOT animated way
+     *
+     * ACHTUNG: it will only copy the LayoutParams from "replaceIt" to "replaceBy" if
+     * replaceBy.mLayoutParams==null
+     *
+     * @param replaceIt - the view to replace
+     * @param replaceBy - the replacement
+     */
+    public static void replaceView(View replaceIt, View replaceBy){
+        if(replaceIt.getParent() == null || !(replaceIt.getParent() instanceof ViewGroup) ){
+            throw new IllegalStateException(String.format("can not replace view %s in ViewParent %s", replaceIt, replaceIt.getParent() ));
         }
 
-        // retrive the ressourceId
-        String text = clipData.getItemAt(0).getText().toString();
-        int ressourceId = Integer.valueOf(text);
+        // retrieve the parent
+        ViewGroup replaceItParent = (ViewGroup) replaceIt.getParent();
 
-        // Inflate from ressourceId
-        if(ressourceId == R.layout.activity6_view_group_animated){
-            ViewGroupAnimated v = new ViewGroupAnimated(context);
-            /*  it is important that the ViewGroup has this LayoutParams.
-                otherwise it won't adopt it's size when it's children should grow larger than the viewGroup
-                ACHTUNG: just doing
-                    LinearLayout.LayoutParams.height = ViewGroup.LayoutParams.WRAP_CONTENT
-                does not work
-              */
-            v.setLayoutParams(new ViewGroup.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT));
-            return v;
-
-        }else if(ressourceId == R.layout.activity6_view_item_animated){
-            return new ViewItemAnimated(context);
+        // retrieve the LayoutParams from "replaceBy" or fallback to "replaceIt"
+        ViewGroup.LayoutParams layoutParamsChild = replaceBy.getLayoutParams();
+        if(layoutParamsChild == null){
+            layoutParamsChild = replaceIt.getLayoutParams();
         }
+        int index = replaceItParent.indexOfChild(replaceIt);
+        replaceItParent.removeView(replaceIt);
 
-        // the View which needs layout
-        return layoutInflater.inflate(ressourceId, null);
+        //remove the replaceBy from its old parent
+        Utils.removeFromParent(replaceBy);
+        replaceItParent.addView(replaceBy, index-1, layoutParamsChild);
+
+
+        // measure
+        int widthMeasureSpec = View.MeasureSpec.makeMeasureSpec(replaceIt.getWidth(), View.MeasureSpec.EXACTLY);
+        int heightMeasureSpec = View.MeasureSpec.makeMeasureSpec(replaceIt.getHeight(), View.MeasureSpec.UNSPECIFIED);
+        replaceBy.measure(widthMeasureSpec, heightMeasureSpec);
+
+        // layout
+        replaceBy.requestLayout();
     }
+
+
+    // remember the AnimatorOfDummy until the drag ends
+    // on on drag end - either send the ViewStack back or remove it or move it to another view
+
+
+    public static AnimatorOfDummy findResponsibleAnimatorOfDummy(View viewDraggedOut){
+        // if there is a previous sibling which is an owner of AnimatorOfDummy
+        // else if there is a parent of type AbstractViewGroup
+
+        return null;
+    }
+
 }

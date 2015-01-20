@@ -10,11 +10,12 @@ import android.view.ViewGroup;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 
 /**
  * Created by skip on 10.09.2014.
  */
-public class ViewGroupAnimated extends ViewGroup implements AbstractViewGroup, ViewGroup.OnHierarchyChangeListener, IDragInViewIdentifier {
+public class ViewGroupAnimated extends ViewGroup implements AbstractViewGroup, ViewGroup.OnHierarchyChangeListener, IDragInViewIdentifier, IDummyContainer {
 
     private List<AbstractFigure> children = new ArrayList<AbstractFigure>();
     private AbstractFigure parent;
@@ -23,7 +24,7 @@ public class ViewGroupAnimated extends ViewGroup implements AbstractViewGroup, V
     private AnimatorOfDummy animatorOfDummyFollower;
 
     // is triggered when the drag leaves the view or dummy to hide the dummy
-    private OnDragOutDummyUnregister onDragOutDummyUnregister;
+    private OnDummyDragOutDummyUnregister onDragOutDummyUnregister;
 
     private int minHeight = Constants.VIEWGROUP_MIN_HEIGHT_PX;
     private int minWidth = 100;
@@ -64,8 +65,11 @@ public class ViewGroupAnimated extends ViewGroup implements AbstractViewGroup, V
         this.animatorOfDummyFollower = new AnimatorOfDummy(context);
 
         // create a listener which would hide, when drag leaves this view and dummy and add it to the follower
-        this.onDragOutDummyUnregister = new OnDragOutDummyUnregister(this, this.animatorOfDummyFollower, new AnimatorOfDummy[]{this.animatorOfDummyInsider, this.animatorOfDummyFollower});
+        this.onDragOutDummyUnregister = new OnDummyDragOutDummyUnregister(this, this.animatorOfDummyFollower, new AnimatorOfDummy[]{this.animatorOfDummyInsider, this.animatorOfDummyFollower});
         this.animatorOfDummyFollower.addDummyOnDragListener(this.onDragOutDummyUnregister);
+
+        // create a listener which would start dragging a view when its already on the stack
+        this.setOnLongClickListener(new LongClickListenerStartDragFromStack(this));
 
         setMinimumHeight(minHeight);
         setMinimumWidth(minWidth);
@@ -74,6 +78,9 @@ public class ViewGroupAnimated extends ViewGroup implements AbstractViewGroup, V
         setPadding(mPadding_left, mPadding_top, 0, mPadding_bottom);
 
         setRandomBg();
+
+        // every ViewGroup should have its own id
+        setId(UUID.randomUUID().hashCode());
     }
 
 
@@ -111,6 +118,20 @@ public class ViewGroupAnimated extends ViewGroup implements AbstractViewGroup, V
     }
 
 
+    private OnDragListener onDragListener = null;
+    @Override
+    public void setOnDragListener(OnDragListener l) {
+        // remember that we already have an onDragListener. Do not allow to override it!
+        // l == null is the possibility to remove the onDragListener
+        // onDragListener no listener was defined yet
+        if(l == null || onDragListener == null){
+            onDragListener = l;
+            super.setOnDragListener(l);
+        }else{
+            throw new IllegalStateException("There already is an onDragListener");
+        }
+    }
+
     @Override
     public boolean dispatchDragEvent(DragEvent event) {
         // check, whether we are dragging over the dummy
@@ -124,11 +145,11 @@ public class ViewGroupAnimated extends ViewGroup implements AbstractViewGroup, V
             animatorOfDummyFollower.onDragStarted(event);
 
         }else if(event.getAction() == DragEvent.ACTION_DRAG_ENTERED){
-            Log.d("draggin", "Drag in");
+            Log.d(Constants.LOGD, "Drag in");
             onDragInAddDummyAnimation();
 
         }else if(event.getAction() == DragEvent.ACTION_DRAG_EXITED){
-            Log.d("draggin", "Drag out");
+            Log.d(Constants.LOGD, "Drag out");
             onDragOutDummyUnregister.onDrag(this, event);
 
         }else if(event.getAction()==DragEvent.ACTION_DRAG_LOCATION){
@@ -138,7 +159,7 @@ public class ViewGroupAnimated extends ViewGroup implements AbstractViewGroup, V
             // do not dispatch Location events to increase productivity
 
         } else if(event.getAction() == DragEvent.ACTION_DRAG_ENDED ){
-            animatorOfDummyFollower.onDragEnded(event);
+            animatorOfDummyFollower.onDragEnded();
         }
 
         /** It is important to call the super.dispatch(). Or the children will never be able to receive drag.         */
@@ -155,19 +176,19 @@ public class ViewGroupAnimated extends ViewGroup implements AbstractViewGroup, V
         int resultWidth = getMeasuredWidth();
         int resultHeight = getMeasuredHeight();
 
-        Log.d("yes","---");
-        Log.d("yes","measuredWidth: "+getMeasuredWidth());
-        Log.d("yes","measuredHeight: "+getMeasuredHeight());
+        Log.d(Constants.LOGD,"---");
+        Log.d(Constants.LOGD,"measuredWidth: "+getMeasuredWidth());
+        Log.d(Constants.LOGD,"measuredHeight: "+getMeasuredHeight());
 
         // min height or parent's constraints
         int minWidth = getSuggestedMinimumWidth();
         int minHeight = getSuggestedMinimumHeight();
         int defaultWidth = getDefaultSize(minWidth, widthMeasureSpec);
         int defaultHeight = getDefaultSize(minHeight, heightMeasureSpec);
-        Log.d("yes","minWidth: "+minWidth);
-        Log.d("yes","minHeight: "+minHeight);
-        Log.d("yes","defaultWidth: "+defaultWidth);
-        Log.d("yes","defaultHeight: "+defaultHeight);
+        Log.d(Constants.LOGD,"minWidth: "+minWidth);
+        Log.d(Constants.LOGD,"minHeight: "+minHeight);
+        Log.d(Constants.LOGD,"defaultWidth: "+defaultWidth);
+        Log.d(Constants.LOGD,"defaultHeight: "+defaultHeight);
 
         // data passed to us from parent
         int specHeight = View.MeasureSpec.getSize( heightMeasureSpec );
@@ -175,10 +196,10 @@ public class ViewGroupAnimated extends ViewGroup implements AbstractViewGroup, V
         int specWidth = View.MeasureSpec.getSize( widthMeasureSpec );
         int specWidthMode = View.MeasureSpec.getMode( widthMeasureSpec );
 
-        Log.d("yes","specHeight: "+specHeight);
-        Log.d("yes","specHeightMode: "+specHeightMode);
-        Log.d("yes","specWidth: "+specWidth);
-        Log.d("yes","specWidthMode: "+specWidthMode);
+        Log.d(Constants.LOGD,"specHeight: "+specHeight);
+        Log.d(Constants.LOGD,"specHeightMode: "+specHeightMode);
+        Log.d(Constants.LOGD,"specWidth: "+specWidth);
+        Log.d(Constants.LOGD,"specWidthMode: "+specWidthMode);
 
 
 //        MeasureSpec.AT_MOST; // -2147483648
@@ -205,9 +226,9 @@ public class ViewGroupAnimated extends ViewGroup implements AbstractViewGroup, V
         // to make the child smaller, if the space inside this view is limited
         childHeightSum += getPaddingTop() + getPaddingBottom();
 
-        Log.d("yes","child Count: "+getChildCount());
-        Log.d("yes","childHeightSum: "+childHeightSum);
-        Log.d("yes","childWidthMax: "+childWidthMax);
+        Log.d(Constants.LOGD,"child Count: "+getChildCount());
+        Log.d(Constants.LOGD,"childHeightSum: "+childHeightSum);
+        Log.d(Constants.LOGD,"childWidthMax: "+childWidthMax);
 
         // respect the parent's MeasureSpec constraints
         switch (specHeightMode){
@@ -263,6 +284,34 @@ public class ViewGroupAnimated extends ViewGroup implements AbstractViewGroup, V
         int index = Utils.getViewIndexInParent(this);
         this.animatorOfDummyFollower.onDragInAddDummyAnimation(index + 1);
     }
+
+    /**
+     * The view passed in may have been placed within a special ViewDummy.
+     * THis method checks whether it is so, and if yes - it returns the reponsible AnimatorOfDummy
+     *
+     * @param view - the view which lays within a dummy
+     * @return - the AnimatorOfDummy which is manages the dummy, which's space the view occupies
+     */
+    @Override
+    public AnimatorOfDummy findResponsibleAnimatorOfDummy(View view){
+        // check whether the view is my first child
+        if(getChildAt(0) !=null && getChildAt(0).equals(view)){
+            return this.animatorOfDummyInsider;
+        }
+
+        // check whether the view is my next sibling
+        // check whether the view is my next sibling
+        boolean haveSameParent = (view.getParent()!=null && view.getParent().equals(this.getParent()));
+        View nextSibling = Utils.getSibling(this, 1);
+        if(haveSameParent && nextSibling!=null && nextSibling.equals(view)){
+            return this.animatorOfDummyFollower;
+        }
+
+        // non of this group's dummies may replace the given view
+        return null;
+    }
+
+
 
     @Override
     public void onChildViewAdded(View parent, View child) {
@@ -320,6 +369,10 @@ public class ViewGroupAnimated extends ViewGroup implements AbstractViewGroup, V
     public void replace(AbstractFigure child) {
         // TODO
     }
+
+
+    // CLASSES
+
 
 
 }

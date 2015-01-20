@@ -2,6 +2,7 @@ package de.mine.experiments.anim.animatedgroup;
 
 import android.content.Context;
 import android.util.AttributeSet;
+import android.view.DragEvent;
 import android.view.View;
 import android.widget.LinearLayout;
 
@@ -11,8 +12,6 @@ import java.util.List;
 * Created by skip on 27.09.2014.
 */
 public class ViewParentContainer extends LinearLayout implements AbstractViewGroup {
-
-    ViewDummyAnimated firstDummy;
 
     public ViewParentContainer(Context context) {
         super(context);
@@ -69,6 +68,22 @@ public class ViewParentContainer extends LinearLayout implements AbstractViewGro
         // TODO
     }
 
+    @Override
+    public boolean dispatchDragEvent(DragEvent event) {
+        // notify the filters
+        notifyDragFilter(event);
+        return super.dispatchDragEvent(event);
+    }
+
+    /* sends all Drag Events to the DragControler, which gives it the ability to handle on DRAG_START
+       and DRAG_END events      */
+    private void notifyDragFilter(DragEvent event){
+        DragController dragController = de.mine.experiments.anim.animatedgroup.Context.dragController;
+        if(dragController != null){
+            dragController.notifyDragFilter(this, event);
+        }
+    }
+
     // INTERFACES
 
     @Override
@@ -97,4 +112,5 @@ public class ViewParentContainer extends LinearLayout implements AbstractViewGro
         // TODO
         return null;
     }
+
 }

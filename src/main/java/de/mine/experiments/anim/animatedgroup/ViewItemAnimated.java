@@ -9,19 +9,22 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.RelativeLayout;
 
+import java.util.UUID;
+
 import de.mine.experiments.R;
 
 /**
  * Created by skip on 20.09.2014.
  */
-public class ViewItemAnimated extends RelativeLayout implements AbstractFigure, ViewGroup.OnHierarchyChangeListener, IDragInViewIdentifier{
+public class ViewItemAnimated extends RelativeLayout implements AbstractFigure, ViewGroup.OnHierarchyChangeListener, IDragInViewIdentifier, IDummyContainer{
 
     private Context context;
     private AbstractFigure parent;
     private int heightFixed = Constants.VIEWITEM_FIXED_HEIGHT_PX;
     private AnimatorOfDummy animatorOfDummy;
     private boolean isDraggingOverThis = false;
-    private OnDragOutDummyUnregister onDragOutDummyUnregister;
+
+    private OnDummyDragOutDummyUnregister onDragOutDummyUnregister;
 
     public ViewItemAnimated(Context context) {
         super(context);
@@ -52,12 +55,18 @@ public class ViewItemAnimated extends RelativeLayout implements AbstractFigure, 
 
         // create a listener which will unregister the dummy on drag out of this view and dummy
         // add it to the dummy then
-        this.onDragOutDummyUnregister = new OnDragOutDummyUnregister(this, this.animatorOfDummy, new AnimatorOfDummy[]{this.animatorOfDummy});
+        this.onDragOutDummyUnregister = new OnDummyDragOutDummyUnregister(this, this.animatorOfDummy, new AnimatorOfDummy[]{this.animatorOfDummy});
         this.animatorOfDummy.addDummyOnDragListener(this.onDragOutDummyUnregister);
+
+        // create a listener which would start dragging a view when its already on the stack
+        this.setOnLongClickListener(new LongClickListenerStartDragFromStack(this));
 
         // set layout
         LayoutInflater inflater = LayoutInflater.from(context);
         inflater.inflate(R.layout.activity6_view_item_animated, this);
+
+        // every ViewGroup should have its own id
+        setId(UUID.randomUUID().hashCode());
     }
 
     @Override
@@ -75,6 +84,20 @@ public class ViewItemAnimated extends RelativeLayout implements AbstractFigure, 
     public void onChildViewRemoved(View parent, View child) {
         // detachFromParent the dummy in old parent
         animatorOfDummy.detachFromParent();
+    }
+
+    private OnDragListener onDragListener = null;
+    @Override
+    public void setOnDragListener(OnDragListener l) {
+        // remember that we already have an onDragListener. Do not allow to override it!
+        // l == null is the possibility to remove the onDragListener
+        // onDragListener no listener was defined yet
+        if(l == null || onDragListener == null){
+            onDragListener = l;
+            super.setOnDragListener(l);
+        }else{
+            throw new IllegalStateException("There already is an onDragListener");
+        }
     }
 
     @Override
@@ -113,7 +136,7 @@ public class ViewItemAnimated extends RelativeLayout implements AbstractFigure, 
 
     private void onDragEnded(DragEvent dragEvent){
         if(this.animatorOfDummy != null){
-            this.animatorOfDummy.onDragEnded(dragEvent);
+            this.animatorOfDummy.onDragEnded();
         }
     }
 
@@ -121,6 +144,19 @@ public class ViewItemAnimated extends RelativeLayout implements AbstractFigure, 
         // trigger the animation
         int index = Utils.getViewIndexInParent(this);
         animatorOfDummy.onDragInAddDummyAnimation(index+1);
+    }
+
+    @Override
+    public AnimatorOfDummy findResponsibleAnimatorOfDummy(View view) {
+
+        // check whether the view is my next sibling
+        boolean haveSameParent = (view.getParent()!=null && view.getParent().equals(this.getParent()));
+        View nextSibling = Utils.getSibling(this, 1);
+        if(haveSameParent && nextSibling!=null && nextSibling.equals(view)){
+            return this.animatorOfDummy;
+        }
+
+        return null;
     }
 
     private void onDragOutRemoveDummyAnimation(){

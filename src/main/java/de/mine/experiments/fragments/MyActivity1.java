@@ -13,10 +13,10 @@ import android.widget.Button;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import de.mine.experiments.anim.animatedgroup.Constants;
+
 
 public class MyActivity1 extends ActionBarActivity  implements MyActivity1Model.ModelListener {
-
-    private String TAG = "liveCycle";
 
     private Fragment1Details fragmentDetails;
     private Fragment1List fragmentList;
@@ -27,7 +27,7 @@ public class MyActivity1 extends ActionBarActivity  implements MyActivity1Model.
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
-        Log.d(TAG, "onCreate");
+        Log.d(Constants.LOGD, "onCreate");
 
         setContentView(de.mine.experiments.R.layout.activity1_my);
 
@@ -56,25 +56,25 @@ public class MyActivity1 extends ActionBarActivity  implements MyActivity1Model.
     @Override
     protected void onRestart() {
         super.onRestart();
-        Log.d(TAG, "onRestart");
+        Log.d(Constants.LOGD, "onRestart");
     }
 
     @Override
     protected void onResume() {
         super.onResume();
-        Log.d(TAG, "onResume");
+        Log.d(Constants.LOGD, "onResume");
     }
 
     @Override
     protected void onPause() {
         super.onPause();
-        Log.d(TAG, "onPause");
+        Log.d(Constants.LOGD, "onPause");
     }
 
     @Override
     protected void onDestroy() {
         super.onDestroy();
-        Log.d(TAG, "onDestroy");
+        Log.d(Constants.LOGD, "onDestroy");
     }
 
 
@@ -132,7 +132,7 @@ public class MyActivity1 extends ActionBarActivity  implements MyActivity1Model.
             // init the value from model of fragmentDetails.
             myActivityModel.setText(myActivityModel.getText());
         }else{
-            Log.d(TAG,"Fragment already exists. Do not recreate it!");
+            Log.d(Constants.LOGD,"Fragment already exists. Do not recreate it!");
         }
 
         return this.fragmentDetails;
@@ -142,7 +142,7 @@ public class MyActivity1 extends ActionBarActivity  implements MyActivity1Model.
         FragmentTransaction fragmentTransaction = getFragmentManager().beginTransaction();
         fragmentTransaction.remove(fragmentDetails);
         fragmentTransaction.commit();
-        Log.d(TAG,"Removing fragment "+fragmentDetails);
+        Log.d(Constants.LOGD,"Removing fragment "+fragmentDetails);
     }
 
     private Fragment1List findListFragment(){

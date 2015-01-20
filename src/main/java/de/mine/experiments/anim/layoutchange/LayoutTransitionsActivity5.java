@@ -3,7 +3,6 @@ package de.mine.experiments.anim.layoutchange;
 import android.animation.LayoutTransition;
 import android.app.Activity;
 import android.os.Bundle;
-import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.MotionEvent;
@@ -49,7 +48,6 @@ public class LayoutTransitionsActivity5 extends Activity {
         ViewLayout vl2 = new ViewLayout(getApplicationContext());
         vl.addView(vl2);
         vl = vl2;
-        Log.d("", "click");
     }
 
 

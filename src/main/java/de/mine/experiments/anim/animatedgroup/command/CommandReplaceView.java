@@ -7,10 +7,16 @@ import android.view.View;
 import junit.framework.Assert;
 
 import de.mine.experiments.anim.animatedgroup.Constants;
-import de.mine.experiments.anim.animatedgroup.Utils;
+import de.mine.experiments.anim.animatedgroup.UtilDropHandler;
 import de.mine.experiments.anim.animatedgroup.ViewDummyAnimated;
 
 /**
+ * Replaces a View "replaceIt" by another View "replaceBy" in an animated way.
+ * <ul>
+ *     <li>replaceIt is replaced by a dummy
+ *     <li>the dummy grows / shrinks to the size of "replaceBy"
+ *     <li>the dummy is replaced by "replaceIt"
+ * </ul>
  * Created by skip on 19.10.2014.
  */
 public class CommandReplaceView extends AbstractCommand {
@@ -74,7 +80,7 @@ public class CommandReplaceView extends AbstractCommand {
         final ViewDummyAnimated viewDummyAnimated = new ViewDummyAnimated(context);
 
         // replace view by dummy. Keep size
-        Utils.replaceView(tempreplaceIt, viewDummyAnimated);
+        UtilDropHandler.replaceView(tempreplaceIt, viewDummyAnimated);
 
 
         // MEASURING
@@ -99,7 +105,7 @@ public class CommandReplaceView extends AbstractCommand {
         commandGrowView.addOnExecutionSucessfullyFinishedListener(new ListenerCommand() {
             @Override
             public void onTrigger() {
-                Utils.replaceView(viewDummyAnimated, finalTempreplaceBy);
+                UtilDropHandler.replaceView(viewDummyAnimated, finalTempreplaceBy);
 
                 // notify that we are finished
                 if(direction.equals(DIRECTION.EXECUTE)){

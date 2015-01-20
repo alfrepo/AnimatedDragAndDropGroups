@@ -3,6 +3,7 @@ package de.mine.experiments.anim.animatedgroup;
 import android.view.DragEvent;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.ViewParent;
 
 /**
  * Created by skip on 09.11.2014.
@@ -17,6 +18,33 @@ public final class Utils {
             }
         }
         throw new IllegalStateException("Failed to retrieve the index of the view");
+    }
+
+    /**
+     * Finds the sibling of the given view.
+     * @param view - the view which's sibling we are looking for
+     * @param relativeOffset - the offset, e.g. -1 to get the previous sibling, or 1 go get the next sibling
+     * @return the sibling or null if non sibling was found or on indexOutOfBounds
+     */
+    public static final View getSibling(View view, int relativeOffset) {
+        // check whether a perent ViewGroup exists
+        ViewParent viewParent = view.getParent();
+        if(viewParent == null || !(viewParent instanceof ViewGroup)){
+            return null;
+        }
+        ViewGroup viewGroup = (ViewGroup)viewParent;
+
+        // calculate the sibling index and retrieve it
+        int indexViewInParent = Utils.getViewIndexInParent(view);
+        int siblingIndex = indexViewInParent + relativeOffset;
+        try{
+            return viewGroup.getChildAt(siblingIndex);
+        }catch (IndexOutOfBoundsException e){
+            // will return null
+        }
+
+        // return null since we could not find any siblings
+        return null;
     }
 
     public static String getDragEventName(int dragEvent){
@@ -50,38 +78,28 @@ public final class Utils {
         }
     }
 
-    /** Replace the view by the other.
-     *
-     * ACHTUNG: it will only copy the LayoutParams from "replaceIt" to "replaceBy" if
-     * replaceBy.mLayoutParams==null
-     *
-     * @param replaceIt
-     * @param replaceBy
-     */
-    public static void replaceView(View replaceIt, View replaceBy){
-        if(replaceIt.getParent() == null || !(replaceIt.getParent() instanceof ViewGroup) ){
-            throw new IllegalStateException(String.format("can not replace view %s in ViewParent %s", replaceIt, replaceIt.getParent() ));
+    /** removes the view from parent if the parent exists */
+    public static final void removeFromParent(View view){
+        ViewParent replaceByParent = view.getParent();
+        if(replaceByParent!=null && replaceByParent instanceof ViewGroup){
+            ((ViewGroup) replaceByParent).removeView(view);
         }
-
-        // retrieve the parent
-        ViewGroup viewGroup = (ViewGroup) replaceIt.getParent();
-
-        // replace dummy by child. use attachLayoutAnimationParameters, detachViewFromParent
-        ViewGroup.LayoutParams layoutParamsChild = replaceBy.getLayoutParams();
-        if(layoutParamsChild == null){
-            layoutParamsChild = replaceIt.getLayoutParams();
-        }
-
-        int index = viewGroup.indexOfChild(replaceIt);
-        viewGroup.removeView(replaceIt);
-        viewGroup.addView(replaceBy,index, layoutParamsChild);
-
-        // measure
-        int widthMeasureSpec = View.MeasureSpec.makeMeasureSpec(replaceIt.getWidth(), View.MeasureSpec.EXACTLY);
-        int heightMeasureSpec = View.MeasureSpec.makeMeasureSpec(replaceIt.getHeight(), View.MeasureSpec.UNSPECIFIED);
-        replaceBy.measure(widthMeasureSpec, heightMeasureSpec);
-
-        // layout
-        replaceBy.requestLayout();
     }
+
+    /** removes the view from parent if the parent exists */
+    public static final int getPositionInParent(View view){
+        if(view == null){
+            throw new IllegalStateException("Can not determine potion in parent of null");
+        }
+        ViewGroup viewGroup = ((ViewGroup)view.getParent());
+        for(int i=0; i<viewGroup.getChildCount(); i++){
+            View child = viewGroup.getChildAt(i);
+            if(child.equals(view)){
+                return i;
+            }
+        }
+        // does not make sence!
+        throw new IllegalStateException("Could not find the view within it's parent!");
+    }
+
 }

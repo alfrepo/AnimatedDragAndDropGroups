@@ -9,11 +9,10 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
-import android.widget.BaseAdapter;
-import android.widget.ListAdapter;
 import android.widget.ListView;
-import android.widget.SimpleAdapter;
 import android.widget.TextView;
+
+import de.mine.experiments.anim.animatedgroup.Constants;
 
 /**
  * Created by skip on 03.08.2014.
@@ -27,14 +26,14 @@ public class Fragment1List extends android.app.ListFragment{
     @Override
     public void onInflate(Activity activity, AttributeSet attrs, Bundle savedInstanceState) {
         super.onInflate(activity, attrs, savedInstanceState);
-        Log.d(TAG,"onInflate");
+        Log.d(Constants.LOGD,"onInflate");
         createContent();
     }
 
     @Override
     public void onAttach(Activity activity) {
         super.onAttach(activity);
-        Log.d(TAG,"onAttach");
+        Log.d(Constants.LOGD,"onAttach");
         createContent();
     }
     
@@ -42,7 +41,7 @@ public class Fragment1List extends android.app.ListFragment{
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        Log.d(TAG,"onCreate");
+        Log.d(Constants.LOGD,"onCreate");
         createContent();
     }
 
@@ -50,20 +49,20 @@ public class Fragment1List extends android.app.ListFragment{
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
         createContent();
         View v = super.onCreateView(inflater, container, savedInstanceState);
-        Log.d(TAG,"onCreateView");
+        Log.d(Constants.LOGD,"onCreateView");
         return v;
     }
 
     @Override
     public void onActivityCreated(Bundle savedInstanceState) {
         super.onActivityCreated(savedInstanceState);
-        Log.d(TAG,"onActivityCreated");
+        Log.d(Constants.LOGD,"onActivityCreated");
     }
 
     @Override
     public void onStart() {
         super.onStart();
-        Log.d(TAG,"onStart");
+        Log.d(Constants.LOGD,"onStart");
         createContent();
     }
 
@@ -71,45 +70,45 @@ public class Fragment1List extends android.app.ListFragment{
     @Override
     public void onResume() {
         super.onResume();
-        Log.d(TAG,"onResume");
+        Log.d(Constants.LOGD,"onResume");
     }
 
 
     @Override
     public void onPause() {
         super.onPause();
-        Log.d(TAG,"onPause");
+        Log.d(Constants.LOGD,"onPause");
     }
 
     @Override
     public void onSaveInstanceState(Bundle outState) {
         super.onSaveInstanceState(outState);
-        Log.d(TAG,"onSaveInstanceState");
+        Log.d(Constants.LOGD,"onSaveInstanceState");
     }
 
     @Override
     public void onStop() {
         super.onStop();
-        Log.d(TAG,"onStop");
+        Log.d(Constants.LOGD,"onStop");
         createContent();
     }
 
     @Override
     public void onDestroyView() {
         super.onDestroyView();
-        Log.d(TAG,"onDestroyView");
+        Log.d(Constants.LOGD,"onDestroyView");
     }
 
     @Override
     public void onDestroy() {
         super.onDestroy();
-        Log.d(TAG,"onDestroy");
+        Log.d(Constants.LOGD,"onDestroy");
     }
 
     @Override
     public void onDetach() {
         super.onDetach();
-        Log.d(TAG,"onDetach");
+        Log.d(Constants.LOGD,"onDetach");
     }
 
     // HELPER
@@ -120,7 +119,7 @@ public class Fragment1List extends android.app.ListFragment{
         if(onItemClickListener!=null){
             onItemClickListener.onItemClick(l,v,position, id);
         }
-        Log.d(TAG,"Click");
+        Log.d(Constants.LOGD,"Click");
     }
 
     public void setOnClickListener(AdapterView.OnItemClickListener onItemClickListener){
@@ -137,7 +136,7 @@ public class Fragment1List extends android.app.ListFragment{
             setListAdapter(adapter);
 
         }catch (Exception e){
-            Log.d(TAG, "Not created yet: " + e);
+            Log.d(Constants.LOGD, "Not created yet: " + e);
         }
     }
 }

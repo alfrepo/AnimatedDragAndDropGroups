@@ -10,6 +10,8 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Toast;
 
+import java.util.UUID;
+
 import de.mine.experiments.anim.animatedgroup.command.CommandReplaceView;
 import de.mine.experiments.anim.animatedgroup.command.CommandReplaceViewParameters;
 import de.mine.experiments.anim.animatedgroup.command.CommandsDelayFilterDrop;
@@ -42,6 +44,9 @@ public class ViewDummyAnimated extends View implements AbstractFigure, ViewGroup
     private void init(){
         // TODO me de random BG
         setRandomBg();
+
+        // every ViewGroup should have its own id
+        setId(UUID.randomUUID().hashCode());
     }
 
     @Override
@@ -54,17 +59,19 @@ public class ViewDummyAnimated extends View implements AbstractFigure, ViewGroup
         // dummy does nothing when it is removed
     }
 
-    public void onDropOnDummy(ViewDummyAnimated dummyTarget, DragEvent dropEvent){
+
+    public void onDropOnDummy(DragEventDecorator dropEvent){
+
+        // notify the dragController, that drop occurred
+        de.mine.experiments.anim.animatedgroup.Context.dragController.onDrop(this, dropEvent);
 
         // retrieve the dragged View
         ClipData clipData = dropEvent.getClipData();
-        View view = UtilDropHandler.createViewFromClipData(getContext(), clipData, LayoutInflater.from(getContext()));
+        View view = de.mine.experiments.anim.animatedgroup.Context.dragController.createViewFromClipData(getContext(), clipData, LayoutInflater.from(getContext()));
 
         // replace the dummy by the dragged View
         CommandReplaceView commandReplaceView = new CommandReplaceView(getContext(), this, view);
 
-        // TODO skip - use Invoker to have the possibility to delay command execution
-//      commandReplaceView.execute();
         // install a delay filter which will delay grow commands
         de.mine.experiments.anim.animatedgroup.Context.invoker.addFilter(new CommandsDelayFilterDrop(de.mine.experiments.anim.animatedgroup.Context.invoker, commandReplaceView));
         // make invoker execute the replace command
@@ -82,12 +89,12 @@ public class ViewDummyAnimated extends View implements AbstractFigure, ViewGroup
         Boolean change = Utils.isDraggingOverFromDragEvent(event);
         if(change != null && isDraggingOverThis!=change){
             isDraggingOverThis = change;
-            Log.d("isDraggingOverThis", "Dummy: isDraggingOverThis: "+isDraggingOverThis);
+            Log.d(Constants.LOGD, "Dummy: isDraggingOverThis: "+isDraggingOverThis);
         }
 
         if(event.getAction() == DragEvent.ACTION_DROP){
             Toast.makeText(getContext(), "drop", Toast.LENGTH_SHORT).show();
-            onDropOnDummy(this, event);
+            onDropOnDummy(new DragEventDecorator(event));
         }
 
         super.dispatchDragEvent(event);
