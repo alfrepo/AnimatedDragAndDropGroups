@@ -114,7 +114,8 @@ public class DragController implements IDragFilterContainer {
     }
 
 
-    public void startDragFromToolbar(View view, int shadowRessourceId, int shadowWidth, int shadowHeight, LayoutInflater layoutInflater){
+    public void startDragFromToolbar(View viewFromWhichWeStartedDragging, int shadowRessourceId, int shadowWidth, int shadowHeight, LayoutInflater layoutInflater){
+        Log.d(Constants.LOGD, "startDragFromStack - dragging item with ressourceId "+shadowRessourceId);
 
         // which data to pass on drop
         ClipData clipData = createDragClipData(shadowRessourceId);
@@ -123,7 +124,7 @@ public class DragController implements IDragFilterContainer {
         View.DragShadowBuilder dragShadowBuilder = UtilDropHandler.createDragShadowBuilder(shadowRessourceId, layoutInflater, shadowWidth, shadowHeight);
 
         // does not replace the dragged view by a dummy
-        startDrag(view, clipData, dragShadowBuilder);
+        startDrag(viewFromWhichWeStartedDragging, clipData, dragShadowBuilder);
 
         // when drag fails - moves the shadow to the toolbar and make it disappear
         doWhenDropFails(new Runnable() {
@@ -142,6 +143,7 @@ public class DragController implements IDragFilterContainer {
      * @param startDragOnThis
      */
     public void startDragFromStack(View currentlyDraggingThisView, View startDragOnThis){
+        Log.d(Constants.LOGD, "startDragFromStack - dragging item "+currentlyDraggingThisView.getClass().getSimpleName());
 
         // TODO me - implement converting between xml and ViewHierarchies. Pack those data into the ClipData instead saving Views in vars
         // which data to pass on drop
@@ -292,16 +294,19 @@ public class DragController implements IDragFilterContainer {
     private AnimatorOfDummy findResponsibleAnimatorOfDummy(View draggedView){
         AnimatorOfDummy result = null;
         ViewGroup viewParent = (ViewGroup) draggedView.getParent();
+        int childCount = viewParent.getChildCount();
 
-        // look for the previous sibling
-        for(int i = viewParent.getChildCount()-1; i>0; i--){
-            View viewAtIndex = viewParent.getChildAt(i);
-            View viewPredecessor = viewParent.getChildAt(i-1);
-            if(draggedView.equals(viewAtIndex) && viewPredecessor instanceof IDummyContainer){
-                result = ((IDummyContainer)viewPredecessor).findResponsibleAnimatorOfDummy(draggedView);
-                return result;
+        // check siblings. ask every sibling IDummyContainer whether it has an AnimatorOfDummy for us
+        for(int i = 0; i<childCount; i++){
+            View viewSibling = viewParent.getChildAt(i);
+            if(viewSibling instanceof IDummyContainer){
+                result = ((IDummyContainer)viewSibling).findResponsibleAnimatorOfDummy(draggedView);
+                if(result != null){
+                    return result;
+                }
             }
         }
+
 
         // check the parent
         if(viewParent!=null && viewParent instanceof IDummyContainer){
@@ -312,7 +317,7 @@ public class DragController implements IDragFilterContainer {
             }
         }
 
-        return result;
+        return null;
     }
 
 

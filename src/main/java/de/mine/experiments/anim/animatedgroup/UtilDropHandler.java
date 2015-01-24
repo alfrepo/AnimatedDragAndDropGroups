@@ -115,4 +115,47 @@ public class UtilDropHandler {
         return null;
     }
 
+
+    /**
+     * Checks whether a view which contains a followerAnimatorOfDummy - may provide its dummy, to replace the given successor.
+     * This is true, if the view is a successor of the dummy, when dummy already exists.
+     * And this may also be true, if the view is a successor of the view, when the dummy does not exist yet
+     * @param mayContainTheDummy
+     * @param needsToBeReplacedByDummy
+     * @param followerAnimatorOfDummy
+     * @return
+     */
+    public static AnimatorOfDummy findResponsibleFollowerAnimatorOfDummy(View mayContainTheDummy, View needsToBeReplacedByDummy, AnimatorOfDummy followerAnimatorOfDummy) {
+
+        // check whether the view is my next sibling
+        boolean haveSameParent = (needsToBeReplacedByDummy.getParent()!=null && needsToBeReplacedByDummy.getParent().equals(mayContainTheDummy.getParent()));
+
+        // views with different parent may not be replaces by this item's dummy
+        if(!haveSameParent){
+            return null;
+        }
+
+        View nextSibling = Utils.getSibling(mayContainTheDummy, 1);
+
+        // Check whether the view is this view's direct successor of out dummy
+        if( nextSibling!=null && nextSibling.equals(needsToBeReplacedByDummy)){
+            return followerAnimatorOfDummy;
+        }
+
+
+        // check whether this view's next sibling - is our dummy. Then the view may be a successor of dummy
+        ViewDummyAnimated viewDummyAnimated = followerAnimatorOfDummy.getViewDummyAnimated();
+        boolean dummyIsSuccessor = (viewDummyAnimated != null) && (viewDummyAnimated.equals(nextSibling));
+
+        if(dummyIsSuccessor){
+            View nextSiblingAfterDummy = Utils.getSibling(viewDummyAnimated, 1);
+
+            if(nextSiblingAfterDummy!=null && nextSiblingAfterDummy.equals(needsToBeReplacedByDummy)){
+                return followerAnimatorOfDummy;
+            }
+        }
+
+        return null;
+    }
+
 }

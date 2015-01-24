@@ -5,6 +5,7 @@ import android.util.Log;
 import android.view.DragEvent;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.ViewParent;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -57,9 +58,9 @@ public class AnimatorOfDummy implements IDragInViewIdentifier {
      * @param context - the context
      * @param parentOfDummy - the parent which dummies will be added to
      * */
-    public AnimatorOfDummy(Context context, ViewGroup parentOfDummy){
+    public AnimatorOfDummy(Context context, ViewGroup parentOfDummy, int indexInParent){
         this(context);
-        attachToParent(parentOfDummy);
+        attachToParent(parentOfDummy, indexInParent);
     }
 
     /**
@@ -96,44 +97,61 @@ public class AnimatorOfDummy implements IDragInViewIdentifier {
      * together with it's view
      * @param parentOfDummy
      */
-    public void attachToParent(ViewGroup parentOfDummy){
+    public void attachToParent(ViewGroup parentOfDummy, int index){
         // first detach from parent
         detachFromParent();
 
         // reattach to the new parent
         this.parentOfDummy = parentOfDummy;
+
+        // if the dummy already exists reattach it too
+        if(viewDummyAnimated != null){
+            parentOfDummy.addView(viewDummyAnimated, index);
+        }
     }
 
     /**
      * This method will reinitialize the Dummy animator every time when this View is added to a new
      * parent, since the dummy animator must know the parent to add the dummy follower to it.
      */
-    public void attachToParentOfDummyBySibling(View viewSiblingOfDummy){
-        if(viewSiblingOfDummy.getParent() != null){
+    public void attachToParentOfDummyBySibling(ViewGroup viewParent, View viewSiblingOfDummy){
+        if(viewParent != null){
 
             // dummy not empty but has wrong parent
-            if((this.getParentOfDummy() != viewSiblingOfDummy.getParent())){
+            if((this.getParentOfDummy() != viewParent)){
                 this.detachFromParent();
             }
 
             // dummy does not have a parent yet
             if(this.getParentOfDummy() == null){
+                // what is the index of view within parent
+                int indexSibling = Utils.getPositionInParent(viewSiblingOfDummy);
+
                 // reattach to the new parent
-                this.attachToParent((ViewGroup) viewSiblingOfDummy.getParent());
+                this.attachToParent(viewParent, indexSibling+1);
             }
         }
     }
 
     /** Cancel the animation and remove the dummy from parent. */
     public void detachFromParent(){
+        // forget the parent
+        parentOfDummy = null;
+
+        // skip if there is no dummy yet
+        if(viewDummyAnimated != null){
+
+            // remove the dummy from parent
+            ViewParent viewParent = viewDummyAnimated.getParent();
+            if(viewParent!=null){
+                ((ViewGroup)viewParent).removeView(viewDummyAnimated);
+            }
+
+        }
+
         // undo animation
         if(commandGrowView != null){
             this.commandGrowView.cancel();
-        }
-
-        // remove the dummy from parent
-        if(parentOfDummy!=null){
-            parentOfDummy.removeView(viewDummyAnimated);
         }
     }
 
@@ -244,7 +262,7 @@ public class AnimatorOfDummy implements IDragInViewIdentifier {
 
     public ViewDummyAnimated getViewDummyAnimatedInitIfNecessary(ViewGroup viewParent, int indexInParent) {
         if(viewDummyAnimated == null){
-            attachToParent(viewParent);
+            attachToParent(viewParent, indexInParent);
             initDummy(indexInParent);
         }
         return viewDummyAnimated;

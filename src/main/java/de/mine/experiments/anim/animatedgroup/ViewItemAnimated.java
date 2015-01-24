@@ -3,6 +3,7 @@ package de.mine.experiments.anim.animatedgroup;
 import android.content.Context;
 import android.graphics.Color;
 import android.util.AttributeSet;
+import android.util.Log;
 import android.view.DragEvent;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -77,7 +78,7 @@ public class ViewItemAnimated extends RelativeLayout implements AbstractFigure, 
 
     @Override
     public void onChildViewAdded(View parent, View child) {
-        animatorOfDummy.attachToParentOfDummyBySibling(this);
+        animatorOfDummy.attachToParentOfDummyBySibling((ViewGroup)parent, this);
     }
 
 
@@ -142,22 +143,50 @@ public class ViewItemAnimated extends RelativeLayout implements AbstractFigure, 
     }
 
     protected void onDragIn(){
+
         // trigger the animation
-        int index = Utils.getViewIndexInParent(this);
-        animatorOfDummy.onDragInAddDummyAnimation(index+1);
+        int indexOfThisView = Utils.getViewIndexInParent(this);
+
+        Log.d(Constants.LOGD, String.format("Dragged into item %s with index in parend %s", getClass().getSimpleName(), indexOfThisView ));
+
+        // the dummy should be added to the parent directly after this view
+        animatorOfDummy.onDragInAddDummyAnimation(indexOfThisView+1);
     }
 
     @Override
     public AnimatorOfDummy findResponsibleAnimatorOfDummy(View view) {
 
-        // check whether the view is my next sibling
-        boolean haveSameParent = (view.getParent()!=null && view.getParent().equals(this.getParent()));
-        View nextSibling = Utils.getSibling(this, 1);
-        if(haveSameParent && nextSibling!=null && nextSibling.equals(view)){
-            return this.animatorOfDummy;
-        }
+        return UtilDropHandler.findResponsibleFollowerAnimatorOfDummy(this, view, animatorOfDummy);
 
-        return null;
+//        // check whether the view is my next sibling
+//        boolean haveSameParent = (view.getParent()!=null && view.getParent().equals(this.getParent()));
+//
+//        // views with different parent may not be replaces by this item's dummy
+//        if(!haveSameParent){
+//            return null;
+//        }
+//
+//        View nextSibling = Utils.getSibling(this, 1);
+//
+//        // Check whether the view is this view's direct successor of out dummy
+//        if( nextSibling!=null && nextSibling.equals(view)){
+//            return this.animatorOfDummy;
+//        }
+//
+//
+//        // check whether this view's next sibling - is our dummy. Then the view may be a successor of dummy
+//        ViewDummyAnimated viewDummyAnimated = animatorOfDummy.getViewDummyAnimated();
+//        boolean dummyIsSuccessor = (viewDummyAnimated != null) && (viewDummyAnimated.equals(nextSibling));
+//
+//        if(dummyIsSuccessor){
+//            View nextSiblingAfterDummy = Utils.getSibling(viewDummyAnimated, 1);
+//
+//            if(nextSiblingAfterDummy!=null && nextSiblingAfterDummy.equals(view)){
+//                return this.animatorOfDummy;
+//            }
+//        }
+//
+//        return null;
     }
 
     private void onDragOutRemoveDummyAnimation(){

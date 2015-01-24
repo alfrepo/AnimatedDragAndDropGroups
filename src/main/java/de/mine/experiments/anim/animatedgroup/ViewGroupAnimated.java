@@ -59,7 +59,7 @@ public class ViewGroupAnimated extends ViewGroup implements AbstractViewGroup, V
         this.setOnHierarchyChangeListener(getOnHierarchyChangeListener());
 
         // dummy insider - the parent is this
-        this.animatorOfDummyInsider = new AnimatorOfDummy(context, this);
+        this.animatorOfDummyInsider = new AnimatorOfDummy(context, this, 0);
 
         // dummy follower has the same parent as the view. Parent is attached later when the view is attached
         this.animatorOfDummyFollower = new AnimatorOfDummy(context);
@@ -295,17 +295,33 @@ public class ViewGroupAnimated extends ViewGroup implements AbstractViewGroup, V
     @Override
     public AnimatorOfDummy findResponsibleAnimatorOfDummy(View view){
         // check whether the view is my first child
-        if(getChildAt(0) !=null && getChildAt(0).equals(view)){
+        View childFirst = getChildAt(0);
+        View childSecond = getChildAt(0);
+        ViewDummyAnimated dummyInsider = animatorOfDummyInsider.getViewDummyAnimated();
+
+        // the first child is the view? inside dummy fits
+        if(childFirst !=null && childFirst.equals(view)){
+            return this.animatorOfDummyInsider;
+
+        // the first child is a dummy? And view is it's follower? fits
+        }else if(dummyInsider!=null && dummyInsider.equals(childFirst) && view.equals(childSecond)){
             return this.animatorOfDummyInsider;
         }
 
         // check whether the view is my next sibling
         // check whether the view is my next sibling
         boolean haveSameParent = (view.getParent()!=null && view.getParent().equals(this.getParent()));
-        View nextSibling = Utils.getSibling(this, 1);
-        if(haveSameParent && nextSibling!=null && nextSibling.equals(view)){
-            return this.animatorOfDummyFollower;
+        if(haveSameParent){
+            AnimatorOfDummy result = UtilDropHandler.findResponsibleFollowerAnimatorOfDummy(this, view, this.animatorOfDummyFollower);
+            if(result != null){
+                return result;
+            }
         }
+
+//        View nextSibling = Utils.getSibling(this, 1);
+//        if(haveSameParent && nextSibling!=null && nextSibling.equals(view)){
+//            return this.animatorOfDummyFollower;
+//        }
 
         // non of this group's dummies may replace the given view
         return null;
@@ -316,7 +332,7 @@ public class ViewGroupAnimated extends ViewGroup implements AbstractViewGroup, V
     @Override
     public void onChildViewAdded(View parent, View child) {
         // this view was added to a new parent - recreate it
-        this.animatorOfDummyFollower.attachToParentOfDummyBySibling(this);
+        this.animatorOfDummyFollower.attachToParentOfDummyBySibling((ViewGroup)parent, this);
     }
 
     @Override
