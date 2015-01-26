@@ -28,7 +28,7 @@ import de.mine.experiments.anim.animatedgroup.command.CommandGrowViewParameters;
  * </ul>
  * Created by skip on 08.11.2014.
  */
-public class AnimatorOfDummy implements IDragInViewIdentifier {
+public class AnimatorOfDummy implements IDragInViewIdentifier, View.OnDragListener {
 
     public static final int INITIAL_DUMMY_HEIGHT_BEFORE_EXPANDING = 0;
     public static final int DUMMY_HEIGHT =  Constants.DUMMY_HEIGHT_PX; // fixed height of dummies
@@ -53,14 +53,23 @@ public class AnimatorOfDummy implements IDragInViewIdentifier {
     // dragListeners which are registered on the dummy
     private List<View.OnDragListener> dummyOnDragListeners = new ArrayList<View.OnDragListener>();
 
+    // after which view should the dummy be appended
+    private View predescessorView = null;
+
+
+    public AnimatorOfDummy(Context context, ViewGroup parentOfDummy){
+        this(context, parentOfDummy, null);
+    }
+
     /**
      * Create a new AnimatorOfDummy
      * @param context - the context
      * @param parentOfDummy - the parent which dummies will be added to
+     * @param predecessorView - the predescessor of dummy in parent. May be null
      * */
-    public AnimatorOfDummy(Context context, ViewGroup parentOfDummy, int indexInParent){
+    public AnimatorOfDummy(Context context, ViewGroup parentOfDummy, View predecessorView){
         this(context);
-        attachToParent(parentOfDummy, indexInParent);
+        attachToParent(parentOfDummy, predecessorView);
     }
 
     /**
@@ -96,40 +105,21 @@ public class AnimatorOfDummy implements IDragInViewIdentifier {
      * Attachement to a new parent. Happens if a dummy is moved from one Parent to another,
      * together with it's view
      * @param parentOfDummy
+     * @param predecessorView - predecessor of dummy, may be null
      */
-    public void attachToParent(ViewGroup parentOfDummy, int index){
+    public void attachToParent(ViewGroup parentOfDummy, View predecessorView){
         // first detach from parent
         detachFromParent();
 
         // reattach to the new parent
         this.parentOfDummy = parentOfDummy;
 
+        // cache the new position
+        setPredescessor(predecessorView);
+
         // if the dummy already exists reattach it too
         if(viewDummyAnimated != null){
-            parentOfDummy.addView(viewDummyAnimated, index);
-        }
-    }
-
-    /**
-     * This method will reinitialize the Dummy animator every time when this View is added to a new
-     * parent, since the dummy animator must know the parent to add the dummy follower to it.
-     */
-    public void attachToParentOfDummyBySibling(ViewGroup viewParent, View viewSiblingOfDummy){
-        if(viewParent != null){
-
-            // dummy not empty but has wrong parent
-            if((this.getParentOfDummy() != viewParent)){
-                this.detachFromParent();
-            }
-
-            // dummy does not have a parent yet
-            if(this.getParentOfDummy() == null){
-                // what is the index of view within parent
-                int indexSibling = Utils.getPositionInParent(viewSiblingOfDummy);
-
-                // reattach to the new parent
-                this.attachToParent(viewParent, indexSibling+1);
-            }
+            initDummy();
         }
     }
 
@@ -146,13 +136,36 @@ public class AnimatorOfDummy implements IDragInViewIdentifier {
             if(viewParent!=null){
                 ((ViewGroup)viewParent).removeView(viewDummyAnimated);
             }
-
         }
 
         // undo animation
         if(commandGrowView != null){
             this.commandGrowView.cancel();
         }
+    }
+
+    /**
+     * Will Handle ACTION_DRAG_STARTED, ACTION_DRAG_ENTERED, ACTION_DRAG_ENDED
+     * @param v
+     * @param event
+     * @return
+     */
+    @Override
+    public boolean onDrag(View v, DragEvent event) {
+        // react on drag by manipulating the dummy
+        if(event.getAction() == DragEvent.ACTION_DRAG_STARTED ){
+            onDragStarted(event);
+
+        }else if(event.getAction() == DragEvent.ACTION_DRAG_ENTERED){
+            Log.d(Constants.LOGD, "Drag in");
+            onDragInAddDummyAnimation();
+
+        } else if(event.getAction() == DragEvent.ACTION_DRAG_ENDED ){
+            onDragEnded();
+
+        }
+
+        return true;
     }
 
     /** The AnimatorOfDummy has to be notified about drag start, to remember the DragEvent.
@@ -169,11 +182,12 @@ public class AnimatorOfDummy implements IDragInViewIdentifier {
         this.dragEvent = null;
     }
 
-    /** Notify the AnimatorOfDummy when som object is dragged into the parent.
+
+    /** Notify the AnimatorOfDummy when some object is dragged into the parent.
      *  The dummy will be added to the Parent and grown to a large size
-     * @param dummyPositionInParent
      */
-    public void onDragInAddDummyAnimation(int dummyPositionInParent) {
+    public void onDragInAddDummyAnimation() {
+
         // in manually mode - do not try to init a dummy
         if(!isEnabled){
             Log.d(Constants.LOGD, "The view is in disabled mode. No dummy will be initiated.");
@@ -187,11 +201,12 @@ public class AnimatorOfDummy implements IDragInViewIdentifier {
         }
 
         // lazy creation of dummy on drag in
-        initDummy(dummyPositionInParent);
+        initDummy();
 
         // animate the addition of the view
         de.mine.experiments.anim.animatedgroup.Context.invoker.executeCommand(commandGrowView, new CommandGrowViewParameters(CommandGrowView.Direction.EXECUTING));
     }
+
 
     public void setEnabled(boolean isEnabled){
         this.isEnabled = isEnabled;
@@ -244,26 +259,12 @@ public class AnimatorOfDummy implements IDragInViewIdentifier {
         return viewDummyAnimated;
     }
 
-    /** Returns the dummy or creates a dummy on the position of the given view.
-     * @param viewToReplaceByDummy - on this position the view will be created
-     * @return
-     */
-    public ViewDummyAnimated getViewDummyAnimatedInitIfNecessary(View viewToReplaceByDummy) {
-        ViewGroup viewGroup = (ViewGroup)viewToReplaceByDummy.getParent();
-        int indexInParent;
-        for(indexInParent=0; indexInParent<viewGroup.getChildCount(); indexInParent++){
-            if(viewGroup.getChildAt(indexInParent).equals(viewToReplaceByDummy)){
-                 break;
-            }
-        }
-        // here now create the view dummy on the position of the given view which needs to be replaced
-        return getViewDummyAnimatedInitIfNecessary(viewGroup, indexInParent);
-    }
 
-    public ViewDummyAnimated getViewDummyAnimatedInitIfNecessary(ViewGroup viewParent, int indexInParent) {
+    // TODO me define points when the predescessor is chosen
+    public ViewDummyAnimated getViewDummyAnimatedInitIfNecessary(ViewGroup viewParent, View predecessorView) {
         if(viewDummyAnimated == null){
-            attachToParent(viewParent, indexInParent);
-            initDummy(indexInParent);
+            attachToParent(viewParent, predecessorView);
+            initDummy();
         }
         return viewDummyAnimated;
     }
@@ -281,10 +282,36 @@ public class AnimatorOfDummy implements IDragInViewIdentifier {
 
     // PRIVATE
 
-    /** Creates a new dummy and initializes it into drag mode - notifyChildOfDrag
-     * @param dummyPositionInParent - the position of view in dummy
+    /**
+     * WHich index should be used to append the dummy to the parent.
+     * Depends on the predecessor.
+     * If no predecessor is defined - 0 is used.
+     *
+     * @return index in parent
      */
-    private void initDummy(int dummyPositionInParent) {
+    private int getIndexInParent(){
+        // the default index is 0 when no predecessor is defined
+        int indexInParent = 0;
+
+        if(predescessorView != null){
+            indexInParent = Utils.getPositionInParent(predescessorView) + 1;
+        }
+        return indexInParent;
+    }
+
+    /**
+     * Storing predecessor is better, than storng the index, since the index may change,
+     * when the dummy is reattached or when a new view is inserted before the predecessor
+     * @param predescessorView
+     */
+    private void setPredescessor(View predescessorView){
+        this.predescessorView = predescessorView;
+    }
+
+
+    /** Creates a new dummy and initializes it into drag mode - notifyChildOfDrag
+     */
+    private void initDummy() {
         int parentWidth = parentOfDummy.getWidth();
 
         // create the dummy command if they are null
@@ -298,7 +325,10 @@ public class AnimatorOfDummy implements IDragInViewIdentifier {
             // override the size with initial size of dummy. Important if the dummy already has been visible and now it has it's initial height
             initDummyParameters(viewDummyAnimated, parentWidth, INITIAL_DUMMY_HEIGHT_BEFORE_EXPANDING);
 
-            parentOfDummy.addView(viewDummyAnimated, dummyPositionInParent);
+            // which indexInParent should we have?
+            int indexInParent = getIndexInParent();
+
+            parentOfDummy.addView(viewDummyAnimated, indexInParent);
 
             /* after adding  a Child to the parent, when dragging is already happening -
              * DRAGEVENT.START has to be passed to the parent again,

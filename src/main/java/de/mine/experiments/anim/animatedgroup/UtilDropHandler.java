@@ -108,12 +108,33 @@ public class UtilDropHandler {
     // on on drag end - either send the ViewStack back or remove it or move it to another view
 
 
-    public static AnimatorOfDummy findResponsibleAnimatorOfDummy(View viewDraggedOut){
-        // if there is a previous sibling which is an owner of AnimatorOfDummy
-        // else if there is a parent of type AbstractViewGroup
+    /**
+     * Checks whether the given view is placed at my insider dummies place
+     * @param mayContainTheDummy - the ViewGroup which is considered as the possible provider of the dummy
+     * @param needsToBeReplacedByDummy - the view which we look to replace by a dummy
+     * @param insiderAnimatorOfDummy - the animator of dummy, which shuld be used, if the view indeed fits the requirenments
+     * @return
+     */
+    public static boolean isReplaceableByInsiderAnimatorOfDummy(ViewGroup mayContainTheDummy, View needsToBeReplacedByDummy, AnimatorOfDummy insiderAnimatorOfDummy) {
+        boolean result = false;
 
-        return null;
+        // check whether the view is my first child
+        View childFirst = mayContainTheDummy.getChildAt(0);
+        View childSecond = mayContainTheDummy.getChildAt(1);
+        ViewDummyAnimated dummyInsider = insiderAnimatorOfDummy.getViewDummyAnimated();
+
+        // the first child is the view? inside dummy fits
+        if(childFirst !=null && childFirst.equals(needsToBeReplacedByDummy)){
+            result = true;
+
+            // the first child is a dummy? And view is it's follower? fits
+        }else if(dummyInsider!=null && dummyInsider.equals(childFirst) && needsToBeReplacedByDummy.equals(childSecond)){
+            result = true;
+        }
+
+        return result;
     }
+
 
 
     /**
@@ -125,21 +146,21 @@ public class UtilDropHandler {
      * @param followerAnimatorOfDummy
      * @return
      */
-    public static AnimatorOfDummy findResponsibleFollowerAnimatorOfDummy(View mayContainTheDummy, View needsToBeReplacedByDummy, AnimatorOfDummy followerAnimatorOfDummy) {
+    public static boolean isReplaceableByFollowerAnimatorOfDummy(View mayContainTheDummy, View needsToBeReplacedByDummy, AnimatorOfDummy followerAnimatorOfDummy) {
 
         // check whether the view is my next sibling
         boolean haveSameParent = (needsToBeReplacedByDummy.getParent()!=null && needsToBeReplacedByDummy.getParent().equals(mayContainTheDummy.getParent()));
 
         // views with different parent may not be replaces by this item's dummy
         if(!haveSameParent){
-            return null;
+            return false;
         }
 
         View nextSibling = Utils.getSibling(mayContainTheDummy, 1);
 
         // Check whether the view is this view's direct successor of out dummy
         if( nextSibling!=null && nextSibling.equals(needsToBeReplacedByDummy)){
-            return followerAnimatorOfDummy;
+            return true;
         }
 
 
@@ -151,11 +172,11 @@ public class UtilDropHandler {
             View nextSiblingAfterDummy = Utils.getSibling(viewDummyAnimated, 1);
 
             if(nextSiblingAfterDummy!=null && nextSiblingAfterDummy.equals(needsToBeReplacedByDummy)){
-                return followerAnimatorOfDummy;
+                return true;
             }
         }
 
-        return null;
+        return false;
     }
 
 }

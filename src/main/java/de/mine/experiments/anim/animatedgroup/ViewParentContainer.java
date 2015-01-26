@@ -4,6 +4,7 @@ import android.content.Context;
 import android.util.AttributeSet;
 import android.view.DragEvent;
 import android.view.View;
+import android.view.ViewGroup;
 import android.widget.LinearLayout;
 
 import java.util.List;
@@ -11,7 +12,9 @@ import java.util.List;
 /**
 * Created by skip on 27.09.2014.
 */
-public class ViewParentContainer extends LinearLayout implements AbstractViewGroup {
+public class ViewParentContainer extends LinearLayout implements AbstractViewGroup, IDummyContainer, ViewGroup.OnHierarchyChangeListener{
+
+    AnimatorOfDummy animatorOfDummyInsider;
 
     public ViewParentContainer(Context context) {
         super(context);
@@ -28,9 +31,12 @@ public class ViewParentContainer extends LinearLayout implements AbstractViewGro
         init();
     }
 
-
     private void init(){
-        this.setOnHierarchyChangeListener(getOnHierarchyChangeListener());
+        // pass the information about additon of new Children to the children themselves if they implement OnHierarchyChangeListener
+        this.setOnHierarchyChangeListener(Utils.getOnHierarchyChangeListenerWhichNotifiesChildren());
+
+        // create the dummy with this as parent
+        animatorOfDummyInsider = new AnimatorOfDummy(getContext(), this);
     }
 
     // ENFORCE OnHierarchyChangeListener as children
@@ -44,21 +50,7 @@ public class ViewParentContainer extends LinearLayout implements AbstractViewGro
         super.addView(child);
     }
 
-    private OnHierarchyChangeListener getOnHierarchyChangeListener(){
-        return new OnHierarchyChangeListener() {
-            @Override
-            public void onChildViewAdded(View parent, View child) {
-                // notify  child if, that it was added to a new parent. Let them REMOVE Dummies
-                ((OnHierarchyChangeListener)child).onChildViewAdded(parent, child);
-            }
 
-            @Override
-            public void onChildViewRemoved(View parent, View child) {
-                // notify  child if, that it was added to a new parent. Let them REMOVE Dummies
-                ((OnHierarchyChangeListener)child).onChildViewRemoved(parent, child);
-            }
-        };
-    }
 
     void add(AbstractFigure figure, int index){
         // TODO
@@ -72,7 +64,20 @@ public class ViewParentContainer extends LinearLayout implements AbstractViewGro
     public boolean dispatchDragEvent(DragEvent event) {
         // notify the filters
         notifyDragFilter(event);
-        return super.dispatchDragEvent(event);
+
+        /*
+            TODO: handle onDragEnter only when the stack becomes visible / is visible at dragStart
+            this would avoid to moving the whole stack down on every drag
+          */
+
+        // notify the dummy
+        this.animatorOfDummyInsider.onDrag(this, event);
+
+        /** It is important to call the super.dispatch(). Or the children will never be able to receive drag.         */
+        super.dispatchDragEvent(event);
+
+        /** It is important to return "true" here. Or this view will not be marked as one, which wishes to receive drag.*/
+        return true;
     }
 
     /* sends all Drag Events to the DragControler, which gives it the ability to handle on DRAG_START
@@ -113,4 +118,28 @@ public class ViewParentContainer extends LinearLayout implements AbstractViewGro
         return null;
     }
 
+    // IDummyContainer
+
+
+    @Override
+    public AnimatorOfDummy findResponsibleAnimatorOfDummy(View view) {
+        boolean isReplaceableByInsiderAnimatorOfDummy = UtilDropHandler.isReplaceableByInsiderAnimatorOfDummy(this, view, animatorOfDummyInsider);
+        if(isReplaceableByInsiderAnimatorOfDummy){
+            return animatorOfDummyInsider;
+        }
+        return null;
+    }
+
+    // ViewGroup.OnHierarchyChangeListener
+
+
+    @Override
+    public void onChildViewAdded(View parent, View child) {
+        ((OnHierarchyChangeListener)child).onChildViewAdded(parent, child);
+    }
+
+    @Override
+    public void onChildViewRemoved(View parent, View child) {
+        ((OnHierarchyChangeListener)child).onChildViewRemoved(parent, child);
+    }
 }

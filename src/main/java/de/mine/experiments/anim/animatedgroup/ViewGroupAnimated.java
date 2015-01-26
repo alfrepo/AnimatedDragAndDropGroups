@@ -56,10 +56,10 @@ public class ViewGroupAnimated extends ViewGroup implements AbstractViewGroup, V
         this.context = context;
 
         // pass the information about additon of new Children to the children themselves if they implement OnHierarchyChangeListener
-        this.setOnHierarchyChangeListener(getOnHierarchyChangeListener());
+        this.setOnHierarchyChangeListener(Utils.getOnHierarchyChangeListenerWhichNotifiesChildren());
 
         // dummy insider - the parent is this
-        this.animatorOfDummyInsider = new AnimatorOfDummy(context, this, 0);
+        this.animatorOfDummyInsider = new AnimatorOfDummy(context, this);
 
         // dummy follower has the same parent as the view. Parent is attached later when the view is attached
         this.animatorOfDummyFollower = new AnimatorOfDummy(context);
@@ -83,22 +83,6 @@ public class ViewGroupAnimated extends ViewGroup implements AbstractViewGroup, V
         setId(UUID.randomUUID().hashCode());
     }
 
-
-    private OnHierarchyChangeListener getOnHierarchyChangeListener(){
-        return new OnHierarchyChangeListener() {
-            @Override
-            public void onChildViewAdded(View parent, View child) {
-                // notify child if, that it was added to a new parent. Let them REMOVE Dummies
-                ((OnHierarchyChangeListener)child).onChildViewAdded(parent, child);
-            }
-
-            @Override
-            public void onChildViewRemoved(View parent, View child) {
-                // notify  child if, that it was added to a new parent. Let them REMOVE Dummies
-                ((OnHierarchyChangeListener)child).onChildViewRemoved(parent, child);
-            }
-        };
-    }
 
     @Override
     public boolean isDraggingWithinView() {
@@ -140,26 +124,15 @@ public class ViewGroupAnimated extends ViewGroup implements AbstractViewGroup, V
             isDraggingOverThis = change;
         }
 
-        // react on drag by manipulating the dummy
-        if(event.getAction() == DragEvent.ACTION_DRAG_STARTED ){
-            animatorOfDummyFollower.onDragStarted(event);
+        // pass dragEvent to animatorOfDummies
+        // they will react on onDragStart, onDragOut, onDragIn
+        animatorOfDummyFollower.onDrag(this, event);
+        animatorOfDummyInsider.onDrag(this, event);
 
-        }else if(event.getAction() == DragEvent.ACTION_DRAG_ENTERED){
-            Log.d(Constants.LOGD, "Drag in");
-            onDragInAddDummyAnimation();
-
-        }else if(event.getAction() == DragEvent.ACTION_DRAG_EXITED){
+        if(event.getAction() == DragEvent.ACTION_DRAG_EXITED){
+            // delayed reaction on drag-out on ALL dummies and view by hiding
             Log.d(Constants.LOGD, "Drag out");
             onDragOutDummyUnregister.onDrag(this, event);
-
-        }else if(event.getAction()==DragEvent.ACTION_DRAG_LOCATION){
-            // do not dispatch Location events to increase productivity
-
-        }else if(event.getAction()==DragEvent.ACTION_DROP){
-            // do not dispatch Location events to increase productivity
-
-        } else if(event.getAction() == DragEvent.ACTION_DRAG_ENDED ){
-            animatorOfDummyFollower.onDragEnded();
         }
 
         /** It is important to call the super.dispatch(). Or the children will never be able to receive drag.         */
@@ -271,57 +244,29 @@ public class ViewGroupAnimated extends ViewGroup implements AbstractViewGroup, V
 
 
     /**
-     * MOVE!
-     * Animates the dummies, when the dragShadow is moved into the group.
-     * Creates the dummy if necessary,
-     * adds the dummy to the parent at position x,
-     * removes the view, when animation ends,
-     *
-     */
-    private void onDragInAddDummyAnimation(){
-        this.animatorOfDummyInsider.onDragInAddDummyAnimation(0);
-
-        int index = Utils.getViewIndexInParent(this);
-        this.animatorOfDummyFollower.onDragInAddDummyAnimation(index + 1);
-    }
-
-    /**
      * The view passed in may have been placed within a special ViewDummy.
      * THis method checks whether it is so, and if yes - it returns the reponsible AnimatorOfDummy
      *
-     * @param view - the view which lays within a dummy
+     * @param viewNeedsToBeReplacedByDummy - the view which lays within a dummy
      * @return - the AnimatorOfDummy which is manages the dummy, which's space the view occupies
      */
     @Override
-    public AnimatorOfDummy findResponsibleAnimatorOfDummy(View view){
+    public AnimatorOfDummy findResponsibleAnimatorOfDummy(View viewNeedsToBeReplacedByDummy){
+
         // check whether the view is my first child
-        View childFirst = getChildAt(0);
-        View childSecond = getChildAt(0);
-        ViewDummyAnimated dummyInsider = animatorOfDummyInsider.getViewDummyAnimated();
-
-        // the first child is the view? inside dummy fits
-        if(childFirst !=null && childFirst.equals(view)){
-            return this.animatorOfDummyInsider;
-
-        // the first child is a dummy? And view is it's follower? fits
-        }else if(dummyInsider!=null && dummyInsider.equals(childFirst) && view.equals(childSecond)){
-            return this.animatorOfDummyInsider;
+        boolean  isReplaceableByInsiderAnimatorOfDummy = UtilDropHandler.isReplaceableByInsiderAnimatorOfDummy(this, viewNeedsToBeReplacedByDummy, animatorOfDummyInsider);
+        if(isReplaceableByInsiderAnimatorOfDummy){
+            return animatorOfDummyInsider;
         }
 
         // check whether the view is my next sibling
-        // check whether the view is my next sibling
-        boolean haveSameParent = (view.getParent()!=null && view.getParent().equals(this.getParent()));
+        boolean haveSameParent = (viewNeedsToBeReplacedByDummy.getParent()!=null && viewNeedsToBeReplacedByDummy.getParent().equals(this.getParent()));
         if(haveSameParent){
-            AnimatorOfDummy result = UtilDropHandler.findResponsibleFollowerAnimatorOfDummy(this, view, this.animatorOfDummyFollower);
-            if(result != null){
-                return result;
+            boolean isReplaceableByFollowerAnimatorOfDummy = UtilDropHandler.isReplaceableByFollowerAnimatorOfDummy(this, viewNeedsToBeReplacedByDummy, this.animatorOfDummyFollower);
+            if(isReplaceableByFollowerAnimatorOfDummy){
+                return animatorOfDummyFollower;
             }
         }
-
-//        View nextSibling = Utils.getSibling(this, 1);
-//        if(haveSameParent && nextSibling!=null && nextSibling.equals(view)){
-//            return this.animatorOfDummyFollower;
-//        }
 
         // non of this group's dummies may replace the given view
         return null;
@@ -331,14 +276,21 @@ public class ViewGroupAnimated extends ViewGroup implements AbstractViewGroup, V
 
     @Override
     public void onChildViewAdded(View parent, View child) {
-        // this view was added to a new parent - recreate it
-        this.animatorOfDummyFollower.attachToParentOfDummyBySibling((ViewGroup)parent, this);
+        // if the current child was modified and not some predecessor
+        if(child == this){
+            int indexInParent = Utils.getPositionInParent(this);
+            // this view was added to a new parent - recreate it
+            this.animatorOfDummyFollower.attachToParent((ViewGroup)this.getParent(), this);
+        }
     }
 
     @Override
     public void onChildViewRemoved(View parent, View child) {
-        // detachFromParent the dummy in old parent
-        animatorOfDummyFollower.detachFromParent();
+        // if the current child was modified and not some predecessor
+        if(child == this){
+            // detachFromParent the dummy in old parent
+            animatorOfDummyFollower.detachFromParent();
+        }
     }
 
 

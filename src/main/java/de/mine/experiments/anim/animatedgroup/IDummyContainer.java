@@ -3,7 +3,8 @@ package de.mine.experiments.anim.animatedgroup;
 import android.view.View;
 
 /**
- * Created by skip on 04.01.2015.
+ * An interface which is implemented by views, which contain a dummy.
+ * A dummContainer may be asked for a dummy, e.g. to display the dummy when a view is dragged out
  */
 public interface IDummyContainer {
 

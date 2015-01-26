@@ -3,7 +3,6 @@ package de.mine.experiments.anim.animatedgroup;
 import android.content.Context;
 import android.graphics.Color;
 import android.util.AttributeSet;
-import android.util.Log;
 import android.view.DragEvent;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -78,14 +77,20 @@ public class ViewItemAnimated extends RelativeLayout implements AbstractFigure, 
 
     @Override
     public void onChildViewAdded(View parent, View child) {
-        animatorOfDummy.attachToParentOfDummyBySibling((ViewGroup)parent, this);
+        // beware ! The attachement/ detachement may have happened with one of the predescessors. Check if the child is the current view
+        if(child ==this){
+            animatorOfDummy.attachToParent((ViewGroup)parent, this);
+        }
     }
 
 
     @Override
     public void onChildViewRemoved(View parent, View child) {
-        // detachFromParent the dummy in old parent
-        animatorOfDummy.detachFromParent();
+        // beware ! The attachement/ detachement may have happened with one of the predescessors. Check if the child is the current view
+        if(child ==this){
+            // detachFromParent the dummy in old parent
+            animatorOfDummy.detachFromParent();
+        }
     }
 
     private OnDragListener onDragListener = null;
@@ -110,83 +115,25 @@ public class ViewItemAnimated extends RelativeLayout implements AbstractFigure, 
             isDraggingOverThis = change;
         }
 
+        // handle onDragStart, enter, end,
+        this.animatorOfDummy.onDrag(this, event);
+
         // react on drag by manipulating the dummy
-        if(event.getAction()==DragEvent.ACTION_DRAG_STARTED) {
-            onDragStart(event);
-
-        }else if(event.getAction()==DragEvent.ACTION_DRAG_ENTERED){
-            onDragIn();
-
-        }else if(event.getAction()==DragEvent.ACTION_DRAG_EXITED){
+        if(event.getAction()==DragEvent.ACTION_DRAG_EXITED){
             onDragOutDummyUnregister.onDrag(this, event);
-
-        }else if(event.getAction()==DragEvent.ACTION_DRAG_LOCATION){
-            // do not dispatch Location events to increase productivity
-
-        }else if(event.getAction()==DragEvent.ACTION_DRAG_ENDED) {
-            onDragEnded(event);
         }
 
         return true;
     }
 
-    private void onDragStart(DragEvent dragEvent){
-        if(this.animatorOfDummy != null){
-            this.animatorOfDummy.onDragStarted(dragEvent);
-        }
-    }
-
-    private void onDragEnded(DragEvent dragEvent){
-        if(this.animatorOfDummy != null){
-            this.animatorOfDummy.onDragEnded();
-        }
-    }
-
-    protected void onDragIn(){
-
-        // trigger the animation
-        int indexOfThisView = Utils.getViewIndexInParent(this);
-
-        Log.d(Constants.LOGD, String.format("Dragged into item %s with index in parend %s", getClass().getSimpleName(), indexOfThisView ));
-
-        // the dummy should be added to the parent directly after this view
-        animatorOfDummy.onDragInAddDummyAnimation(indexOfThisView+1);
-    }
 
     @Override
     public AnimatorOfDummy findResponsibleAnimatorOfDummy(View view) {
+        if( UtilDropHandler.isReplaceableByFollowerAnimatorOfDummy(this, view, animatorOfDummy) ){
+            return animatorOfDummy;
+        }
 
-        return UtilDropHandler.findResponsibleFollowerAnimatorOfDummy(this, view, animatorOfDummy);
-
-//        // check whether the view is my next sibling
-//        boolean haveSameParent = (view.getParent()!=null && view.getParent().equals(this.getParent()));
-//
-//        // views with different parent may not be replaces by this item's dummy
-//        if(!haveSameParent){
-//            return null;
-//        }
-//
-//        View nextSibling = Utils.getSibling(this, 1);
-//
-//        // Check whether the view is this view's direct successor of out dummy
-//        if( nextSibling!=null && nextSibling.equals(view)){
-//            return this.animatorOfDummy;
-//        }
-//
-//
-//        // check whether this view's next sibling - is our dummy. Then the view may be a successor of dummy
-//        ViewDummyAnimated viewDummyAnimated = animatorOfDummy.getViewDummyAnimated();
-//        boolean dummyIsSuccessor = (viewDummyAnimated != null) && (viewDummyAnimated.equals(nextSibling));
-//
-//        if(dummyIsSuccessor){
-//            View nextSiblingAfterDummy = Utils.getSibling(viewDummyAnimated, 1);
-//
-//            if(nextSiblingAfterDummy!=null && nextSiblingAfterDummy.equals(view)){
-//                return this.animatorOfDummy;
-//            }
-//        }
-//
-//        return null;
+        return  null;
     }
 
     private void onDragOutRemoveDummyAnimation(){

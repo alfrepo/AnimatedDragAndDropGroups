@@ -16,5 +16,6 @@
     <string name="title_activity_layout_transitions">LayoutTransitionsActivity</string>
     <string name="title_activity_layout_transitions_activity5">LayoutTransitionsActivity5</string>
     <string name="title_activity_view_group_animated_activity6">ViewGroupAnimatedActivity6</string>
+    <string name="title_activity_scroller_activity7">ScrollerActivity7</string>
 
 </resources>

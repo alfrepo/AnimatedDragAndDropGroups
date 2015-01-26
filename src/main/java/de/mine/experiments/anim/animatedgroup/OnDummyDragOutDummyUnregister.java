@@ -64,7 +64,6 @@ public class OnDummyDragOutDummyUnregister implements View.OnDragListener {
                             onDragOutRemoveDummyAnimation();
                         }
                     });
-
                 }
                 }
             };

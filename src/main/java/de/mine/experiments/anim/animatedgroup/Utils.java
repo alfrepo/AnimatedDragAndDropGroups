@@ -102,4 +102,22 @@ public final class Utils {
         throw new IllegalStateException("Could not find the view within it's parent!");
     }
 
+
+    /** Returns a Hierarchy change listener, which would notify the child, if any child is added  to / removed from a new parent */
+    public static final ViewGroup.OnHierarchyChangeListener getOnHierarchyChangeListenerWhichNotifiesChildren(){
+        return new ViewGroup.OnHierarchyChangeListener() {
+            @Override
+            public void onChildViewAdded(View parent, View child) {
+                // notify  child if, that it was added to a new parent. Let them ADD Dummies
+                ((ViewGroup.OnHierarchyChangeListener)child).onChildViewAdded(parent, child);
+            }
+
+            @Override
+            public void onChildViewRemoved(View parent, View child) {
+                // notify  child if, that it was removed from a parent. Let them REMOVE Dummies
+                ((ViewGroup.OnHierarchyChangeListener)child).onChildViewRemoved(parent, child);
+            }
+        };
+    }
+
 }

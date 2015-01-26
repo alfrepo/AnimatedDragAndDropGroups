@@ -21,7 +21,6 @@ public class ViewGroupAnimatedActivity6 extends Activity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity6_linearlayout_parent);
-
         init();
     }
 
@@ -67,5 +66,6 @@ public class ViewGroupAnimatedActivity6 extends Activity {
         // start dragging
         DragController.create().startDragFromToolbar(view, shadowRessourceId, shadowWidth, shadowHeight, getLayoutInflater());
     }
+
 
 }

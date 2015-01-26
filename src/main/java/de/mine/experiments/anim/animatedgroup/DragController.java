@@ -284,7 +284,7 @@ public class DragController implements IDragFilterContainer {
               animatorOfDummyWhichReplacesDraggedView.onDragStarted(startDragEvent);
 
               // 3. show the dummy as usual on drag in
-              animatorOfDummyWhichReplacesDraggedView.onDragInAddDummyAnimation(positionInParent);
+              animatorOfDummyWhichReplacesDraggedView.onDragInAddDummyAnimation();
 
             // pin the dummy by switching it into manual mode. It should not disappear on drag out! It will be deactivated manually on drag end
             animatorOfDummyWhichReplacesDraggedView.setEnabled(false);
