@@ -12,6 +12,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
+import de.mine.experiments.R;
+
 /**
  * Created by skip on 10.09.2014.
  */
@@ -26,14 +28,13 @@ public class ViewGroupAnimated extends ViewGroup implements AbstractViewGroup, V
     // is triggered when the drag leaves the view or dummy to hide the dummy
     private OnDummyDragOutDummyUnregister onDragOutDummyUnregister;
 
-    private int minHeight = Constants.VIEWGROUP_MIN_HEIGHT_PX;
-    private int minWidth = 100;
-    private int mPadding_left = Constants.VIEWGROUP_PADDING_LEFT_PX;
-    private int mPadding_top = Constants.VIEWGROUP_PADDING_TOP_PX;
-    private int mPadding_bottom = Constants.VIEWGROUP_PADDING_BOTTOM_PX;
+    private int minHeight = (int) getResources().getDimension(R.dimen.viewgroup_min_height);
+    private int minWidth = (int) getResources().getDimension(R.dimen.viewgroup_min_width);
+    private int mPadding_left = (int) getResources().getDimension(R.dimen.viewgroup_padding_left);
+    private int mPadding_top = (int) getResources().getDimension(R.dimen.viewgroup_padding_top);
+    private int mPadding_bottom = (int) getResources().getDimension(R.dimen.viewgroup_padding_bottom);
 
     private boolean isDraggingOverThis = false;
-
 
 
     public ViewGroupAnimated(Context context) {

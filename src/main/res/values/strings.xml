@@ -17,5 +17,9 @@
     <string name="title_activity_layout_transitions_activity5">LayoutTransitionsActivity5</string>
     <string name="title_activity_view_group_animated_activity6">ViewGroupAnimatedActivity6</string>
     <string name="title_activity_scroller_activity7">ScrollerActivity7</string>
+    <string name="title_activity_fullscreen_activity8">FullscreenActivity8</string>
+    <string name="dummy_button">Dummy Button</string>
+    <string name="dummy_content">DUMMY\nCONTENT</string>
+    <string name="title_activity_overlay_activity8">OverlayActivity8</string>
 
 </resources>

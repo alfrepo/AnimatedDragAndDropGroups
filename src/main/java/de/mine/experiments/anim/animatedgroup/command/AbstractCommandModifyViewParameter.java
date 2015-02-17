@@ -10,20 +10,41 @@ import de.mine.experiments.anim.animatedgroup.Constants;
 /**
  * Created by skip on 18.10.2014.
  */
-public class CommandGrowView extends AbstractCommand {
+public abstract class AbstractCommandModifyViewParameter extends AbstractCommand {
 
     private final View receiverView;
-    private int fallbackToThisSizeWhenUndoing = 0;
-    private final int finalHeight;
+    private Integer fallbackToThisValueWhenUndoing = 0;
+    private Integer finalValue = 0;
     private final long duration;
 
     private ValueAnimator valueAnimator;
     private Direction direction = Direction.EXECUTING;
 
-    public CommandGrowView(View receiver, int finalHeight, int duration){
+    public AbstractCommandModifyViewParameter(View receiver, int fallbackToThisValueWhenUndoing, Integer finalValue, Integer duration){
+        this(receiver, finalValue, duration);
+        this.fallbackToThisValueWhenUndoing = fallbackToThisValueWhenUndoing;
+    }
+
+    public AbstractCommandModifyViewParameter(View receiver, int finalValue, int duration){
         this.receiverView = receiver;
-        this.finalHeight = finalHeight;
+        this.finalValue = finalValue;
         this.duration = duration;
+
+        // on default fallback to the start value. May change that by using another constructor
+        this.fallbackToThisValueWhenUndoing = getStartValue(receiverView);
+    }
+
+    public AbstractCommandModifyViewParameter setFallbackToThisValueWhenUndoing(int fallbackToThisValueWhenUndoing) {
+        cancel();
+        this.fallbackToThisValueWhenUndoing = fallbackToThisValueWhenUndoing;
+        return this;
+    }
+
+    public AbstractCommandModifyViewParameter setFinalValue(int finalValue) {
+        // setting a new value stopps the animation
+        cancel();
+        this.finalValue = finalValue;
+        return this;
     }
 
     @Override
@@ -58,10 +79,11 @@ public class CommandGrowView extends AbstractCommand {
         }
 
         // use measuredHeight since the view may have already been measured but not drawn yet. In this case the Height would be = 0
-        int startValue = receiverView.getMeasuredHeight();
+        int startValue = getStartValue(receiverView);
+
         Log.d(Constants.LOGD,"receiverView.getHeight(): "+startValue);
 
-        int finalValue = finalHeight;
+        int finalValue = this.finalValue;
         long currentDuration = duration;
 
         // remember new direction
@@ -69,7 +91,7 @@ public class CommandGrowView extends AbstractCommand {
 
         if(animationDirection == Direction.UNDOING){
             // undo by shrinking the view back to its previous height
-            finalValue = this.fallbackToThisSizeWhenUndoing;
+            finalValue = this.fallbackToThisValueWhenUndoing;
         }
 
         // cancel if in progress
@@ -121,47 +143,39 @@ public class CommandGrowView extends AbstractCommand {
     }
 
     // explicitely tell the direction
-    private ValueAnimator getAnimator(final int startHeight, final int finalHeight, final long durationOfAnimation) {
+    private ValueAnimator getAnimator(final int startValue, final int finalValue, final long durationOfAnimation) {
 
         if(valueAnimator != null && valueAnimator.isRunning()){
             valueAnimator.cancel();
         }
 
         // animate dummy height from current height to final height
-        valueAnimator = ValueAnimator.ofInt(startHeight, finalHeight);
+        valueAnimator = ValueAnimator.ofInt(startValue, finalValue);
         valueAnimator.setDuration(durationOfAnimation);
         valueAnimator.addUpdateListener(new ValueAnimator.AnimatorUpdateListener() {
             public void onAnimationUpdate(ValueAnimator animation) {
-                Integer value = (Integer) animation.getAnimatedValue();
-                receiverView.getLayoutParams().height = value.intValue();
-                receiverView.requestLayout();
+
+                doOnUpdate(receiverView, animation);
             }
         });
 
         return valueAnimator;
     }
 
+    /**
+     * When the command starts - with what value should it start the animation?
+     * @param receiverView
+     * @return
+     */
+    abstract int getStartValue(View receiverView);
 
+    /**
+     * What to do when animation is updated
+     * @param receiverView
+     * @param animaton
+     */
+    abstract void doOnUpdate(View receiverView, ValueAnimator animaton);
 
-    // HELPER
-
-// DELETE
-//    private long computeRestNavigationDuration(int startValue, int endValue){
-//        int currentDelta = Math.abs(startValue - endValue);
-//        int initialDelta = Math.abs(startHeight - finalHeight);
-//
-//        // max value is the original time
-//        double percentage = currentDelta / (initialDelta);
-//
-//        // the duration is just a part of the original duration
-//        long resultingAnimationDuration = Math.round(duration * percentage);
-//
-//        // interval
-//        resultingAnimationDuration = Math.min(resultingAnimationDuration, duration);
-//        resultingAnimationDuration = Math.max(resultingAnimationDuration, 0);
-//
-//        return resultingAnimationDuration;
-//    }
 
     // CLASSES
 

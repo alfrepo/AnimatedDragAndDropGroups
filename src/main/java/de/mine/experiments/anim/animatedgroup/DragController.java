@@ -65,11 +65,12 @@ public class DragController implements IDragFilterContainer {
     };
 
     public static DragController create(){
-        if(Context.dragController == null){
-            Context.dragController = new DragController();
-            return Context.dragController;
+        if(Context.dragController != null) {
+            // stop previous drag
+            Context.dragController.onDragEnded(null);
         }
-        throw new IllegalStateException("A DragController already exists in the Context. Drag should be happening already. ");
+        Context.dragController = new DragController();
+        return Context.dragController;
     }
 
     private ClipData createDragClipData(Integer ressourceIdDraggedView) {
@@ -186,6 +187,33 @@ public class DragController implements IDragFilterContainer {
     }
 
 
+    // IDragFilterContainer
+
+    @Override
+    public void addDragFilter(IOnDragFilter filter) {
+        dragFilters.add(filter);
+    }
+
+    @Override
+    public void removeDragFilter(IOnDragFilter filter) {
+        dragFilters.remove(filter);
+    }
+
+    @Override
+    public List<IOnDragFilter> getDragFilters() {
+        return dragFilters;
+    }
+
+    //TODO: every Root View class should call this. Only then it will be possible to capture drag Start / end events
+    @Override
+    public void notifyDragFilter(View view, DragEvent dragEvent) {
+        if(dragFilters.isEmpty()) return;
+        for(IOnDragFilter filter:new ArrayList<IOnDragFilter>(dragFilters)){
+            filter.onDrag(view, dragEvent);
+        }
+    }
+
+
     // PRIVATE
 
     /** Inits the dragStart     */
@@ -199,6 +227,9 @@ public class DragController implements IDragFilterContainer {
 
         // start dragging
         viewFromWhichWeStartedDragging.startDrag(clipData, dragShadowBuilder, null, 0);
+
+        // TODO try to hide the bar
+        Context.activity.getActionBar().hide();
     }
 
     private void onDragStarted(DragEvent dragStartEvent){
@@ -210,7 +241,11 @@ public class DragController implements IDragFilterContainer {
      * The view on which View.startDrag  is done - is responsible for notifying the DragController about dragEnd
      * @param dragEvent
      */
-    private void onDragEnded(DragEvent dragEvent){
+    void onDragEnded(DragEvent dragEvent){
+
+        // TODO try to hide the bar
+        Context.activity.getActionBar().show();
+
         // the fallback when drop fails
         if(isDropSuccessfullyDone){
             // drop is implemented in the View which the drop is done on
@@ -321,30 +356,5 @@ public class DragController implements IDragFilterContainer {
     }
 
 
-    // IDragFilterContainer
-
-    @Override
-    public void addDragFilter(IOnDragFilter filter) {
-        dragFilters.add(filter);
-    }
-
-    @Override
-    public void removeDragFilter(IOnDragFilter filter) {
-        dragFilters.remove(filter);
-    }
-
-    @Override
-    public List<IOnDragFilter> getDragFilters() {
-        return dragFilters;
-    }
-
-    //TODO: every Root View class should call this. Only then it will be possible to capture drag Start / end events
-    @Override
-    public void notifyDragFilter(View view, DragEvent dragEvent) {
-        if(dragFilters.isEmpty()) return;
-        for(IOnDragFilter filter:new ArrayList<IOnDragFilter>(dragFilters)){
-            filter.onDrag(view, dragEvent);
-        }
-    }
 
 }

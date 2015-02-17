@@ -10,8 +10,10 @@ import android.view.ViewParent;
 import java.util.ArrayList;
 import java.util.List;
 
+import de.mine.experiments.R;
+import de.mine.experiments.anim.animatedgroup.command.AbstractCommandModifyViewParameter;
 import de.mine.experiments.anim.animatedgroup.command.Command;
-import de.mine.experiments.anim.animatedgroup.command.CommandGrowView;
+import de.mine.experiments.anim.animatedgroup.command.CommandGrowViewHeight;
 import de.mine.experiments.anim.animatedgroup.command.CommandGrowViewParameters;
 
 /**
@@ -30,8 +32,8 @@ import de.mine.experiments.anim.animatedgroup.command.CommandGrowViewParameters;
  */
 public class AnimatorOfDummy implements IDragInViewIdentifier, View.OnDragListener {
 
-    public static final int INITIAL_DUMMY_HEIGHT_BEFORE_EXPANDING = 0;
-    public static final int DUMMY_HEIGHT =  Constants.DUMMY_HEIGHT_PX; // fixed height of dummies
+    public int INITIAL_DUMMY_HEIGHT_BEFORE_EXPANDING;
+    public int DUMMY_HEIGHT;
     public static final int DUMMY_ANIMATION_DURATION =  Constants.DUMMY_TIME_ANIMATION_DURATION_MS; // ms
 
     // manual mode - in this mode the dummy is controlled explicitely not by drag events
@@ -45,7 +47,7 @@ public class AnimatorOfDummy implements IDragInViewIdentifier, View.OnDragListen
     private ViewDummyAnimated viewDummyAnimated = null;
 
     // command which is used to animate the dummy
-    private CommandGrowView commandGrowView;
+    private AbstractCommandModifyViewParameter commandGrowView;
 
     // last event which may be passed to the dummy
     private DragEvent dragEvent;
@@ -84,6 +86,9 @@ public class AnimatorOfDummy implements IDragInViewIdentifier, View.OnDragListen
     }
 
     private void init(){
+        DUMMY_HEIGHT = (int) context.getResources().getDimension(R.dimen.dummy_height); // fixed height of dummies
+        INITIAL_DUMMY_HEIGHT_BEFORE_EXPANDING = (int) context.getResources().getDimension(R.dimen.dummy_initial_before_expanding);
+
         /* Listen for drag end to deactivate the Listener */
         addDummyOnDragListener(new View.OnDragListener() {
             @Override
@@ -146,7 +151,7 @@ public class AnimatorOfDummy implements IDragInViewIdentifier, View.OnDragListen
 
     /**
      * Will Handle ACTION_DRAG_STARTED, ACTION_DRAG_ENTERED, ACTION_DRAG_ENDED
-     * @param v
+     * @param v - the view which owns this anmator. EIther a ViewItem or a ViewGroup
      * @param event
      * @return
      */
@@ -204,7 +209,7 @@ public class AnimatorOfDummy implements IDragInViewIdentifier, View.OnDragListen
         initDummy();
 
         // animate the addition of the view
-        de.mine.experiments.anim.animatedgroup.Context.invoker.executeCommand(commandGrowView, new CommandGrowViewParameters(CommandGrowView.Direction.EXECUTING));
+        de.mine.experiments.anim.animatedgroup.Context.invoker.executeCommand(commandGrowView, new CommandGrowViewParameters(AbstractCommandModifyViewParameter.Direction.EXECUTING).setFinalValue(DUMMY_HEIGHT));
     }
 
 
@@ -222,7 +227,7 @@ public class AnimatorOfDummy implements IDragInViewIdentifier, View.OnDragListen
             return;
         }
         if(viewDummyAnimated != null){
-            de.mine.experiments.anim.animatedgroup.Context.invoker.executeCommand(commandGrowView, new CommandGrowViewParameters(CommandGrowView.Direction.UNDOING));
+            de.mine.experiments.anim.animatedgroup.Context.invoker.executeCommand(commandGrowView, new CommandGrowViewParameters(AbstractCommandModifyViewParameter.Direction.UNDOING));
         }
     }
 
@@ -315,7 +320,7 @@ public class AnimatorOfDummy implements IDragInViewIdentifier, View.OnDragListen
         int parentWidth = parentOfDummy.getWidth();
 
         // create the dummy command if they are null
-        this.initDummyAndCommand(parentWidth);
+        this.createDummyAndCommand(parentWidth);
         Log.d(Constants.LOGD, "Width: " + parentWidth);
 
         /*  add the dummy to the group.
@@ -343,17 +348,17 @@ public class AnimatorOfDummy implements IDragInViewIdentifier, View.OnDragListen
         }
     }
 
-    private boolean initDummyAndCommand(int maxDummyWidth){
+    private boolean createDummyAndCommand(int maxDummyWidth){
         // create the command if necessary
         if(viewDummyAnimated == null || commandGrowView == null){
 
-            Log.d(Constants.LOGD, "initDummyAndCommand");
+            Log.d(Constants.LOGD, "createDummyAndCommand");
 
             // create a dummy
             viewDummyAnimated = createADummy(maxDummyWidth, INITIAL_DUMMY_HEIGHT_BEFORE_EXPANDING);
 
             // create the command
-            commandGrowView = new CommandGrowView(viewDummyAnimated, DUMMY_HEIGHT, DUMMY_ANIMATION_DURATION);
+            commandGrowView = new CommandGrowViewHeight(viewDummyAnimated, INITIAL_DUMMY_HEIGHT_BEFORE_EXPANDING, DUMMY_HEIGHT, DUMMY_ANIMATION_DURATION);
 
             // remove the dummy from the parent when the command undo is called
             commandGrowView.addOnUndoFinishedListener(new Command.ListenerCommand() {

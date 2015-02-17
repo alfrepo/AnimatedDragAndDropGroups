@@ -5,7 +5,7 @@ package de.mine.experiments.anim.animatedgroup.command;
  */
 public class CommandsDelayFilterDrop extends CommandsDelayFilter {
 
-    private Class delayedCommandType = CommandGrowView.class;
+    private Class delayedCommandType = AbstractCommandModifyViewParameter.class;
     private CommandReplaceView commandReplaceView;
 
     public CommandsDelayFilterDrop(final Invoker invoker, CommandReplaceView commandReplaceView) {

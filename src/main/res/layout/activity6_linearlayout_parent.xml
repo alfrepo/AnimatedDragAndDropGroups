@@ -3,39 +3,55 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical"
-    android:id="@+id/parentLayout"
+    android:id="@+id/topMostContainer"
     android:animateLayoutChanges="false"
     tools:context="de.mine.experiments.anim.animatedgroup.ViewGroupAnimatedActivity6">
 
-    <!-- Toolbar -->
-    <LinearLayout
+    <!-- Remove Bar -->
+    <de.mine.experiments.anim.animatedgroup.ViewActionbarRemoveButton xmlns:android="http://schemas.android.com/apk/res/android"
         android:id="@+id/toolbar"
-        android:orientation="horizontal"
-        android:layout_width="fill_parent"
-        android:layout_height="50dp"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
         android:layout_alignParentTop="true"
+        android:layout_alignParentStart="true"
         android:layout_alignParentEnd="true"
-        android:background="#ffcaff2d">
+        />
 
-        <Button
-            android:layout_width="100dp"
-            android:layout_height="wrap_content"
-            android:text="DragItem"
-            android:id="@+id/dragItem"
-            android:background="#ffff3e2d" />
+    <!-- Toolbar -->
+    <!-- TODO del -->
+    <!--<LinearLayout
+       android:id="@+id/toolbar"
+       android:orientation="horizontal"
+       android:layout_width="fill_parent"
+       android:layout_height="50dp"
+       android:layout_alignParentTop="true"
+       android:layout_alignParentEnd="true"
+       android:background="#ffcaff2d">
 
-        <Button
-            android:layout_width="100dp"
-            android:layout_height="wrap_content"
-            android:text="DragGroup"
-            android:id="@+id/dragGroup"
-            android:background="#ffff3e2d"/>
+       <Button
+           android:layout_width="100dp"
+           android:layout_height="wrap_content"
+           android:text="DragItem"
+           android:id="@+id/dragItem"
+           android:background="#ffff3e2d" />
 
-    </LinearLayout>
+       <Button
+           android:layout_width="100dp"
+           android:layout_height="wrap_content"
+           android:text="DragGroup"
+           android:id="@+id/dragGroup"
+           android:background="#ffff3e2d"/>
 
+   </LinearLayout>
+   -->
+
+
+
+   <!-- Scroller around Main Container -->
     <ScrollView
         android:layout_width="match_parent"
         android:layout_height="match_parent"
+        android:id="@+id/scrollviewMainContainer"
         android:fillViewport="false"
         android:layout_below="@+id/toolbar">
 
@@ -129,5 +145,15 @@
         </de.mine.experiments.anim.animatedgroup.ViewParentContainer>
 
     </ScrollView>
+
+    <de.mine.experiments.anim.animatedgroup.ViewScrollControl
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:id="@+id/scrollControl"
+        android:layout_below="@+id/toolbar"
+        android:layout_alignParentStart="true"
+        android:layout_alignTop="@id/scrollviewMainContainer"
+        android:layout_alignBottom="@id/scrollviewMainContainer"
+        android:background="#9b9cff63" />
 
 </RelativeLayout>

@@ -7,7 +7,9 @@ import android.view.DragEvent;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.ImageView;
 import android.widget.RelativeLayout;
+import android.widget.TextView;
 
 import java.util.UUID;
 
@@ -20,9 +22,12 @@ public class ViewItemAnimated extends RelativeLayout implements AbstractFigure, 
 
     private Context context;
     private AbstractFigure parent;
-    private int heightFixed = Constants.VIEWITEM_FIXED_HEIGHT_PX;
+    private int heightFixed =  (int)getResources().getDimension(R.dimen.viewitem_fixed_height);
     private AnimatorOfDummy animatorOfDummy;
     private boolean isDraggingOverThis = false;
+
+    private TextView textView;
+    private ImageView imageView;
 
     private OnDummyDragOutDummyUnregister onDragOutDummyUnregister;
 
@@ -64,6 +69,10 @@ public class ViewItemAnimated extends RelativeLayout implements AbstractFigure, 
         LayoutInflater inflater = LayoutInflater.from(context);
         inflater.inflate(R.layout.activity6_view_item_animated, this);
 
+        // retrieve the embedded views
+        textView = (TextView) findViewById(R.id.textView);
+        imageView = (ImageView) findViewById(R.id.imageView);
+
         setRandomBg();
 
         // every ViewGroup should have its own id
@@ -78,8 +87,8 @@ public class ViewItemAnimated extends RelativeLayout implements AbstractFigure, 
     @Override
     public void onChildViewAdded(View parent, View child) {
         // beware ! The attachement/ detachement may have happened with one of the predescessors. Check if the child is the current view
-        if(child ==this){
-            animatorOfDummy.attachToParent((ViewGroup)parent, this);
+        if(child == this){
+            animatorOfDummy.attachToParent((ViewGroup)this.getParent(), this);
         }
     }
 
@@ -156,6 +165,9 @@ public class ViewItemAnimated extends RelativeLayout implements AbstractFigure, 
         int b = ((int) (Math.random()*255)) ;
         View mainView = findViewById(R.id.linearLayout);
         mainView.setBackgroundColor(Color.argb(255, r, g, b));
+
+        String random = String.valueOf(Math.random());
+        textView.setText(random);
     }
 
 }

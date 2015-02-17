@@ -72,8 +72,8 @@ public class Invoker {
             Iterator<DelayedCommandAndFilter> iterator = undelayCommands.iterator();
             // iterate all
             while(iterator.hasNext()){
-                // remove commands with wrong type
-                if(!iterator.next().command.getClass().equals(commandType)){
+                // remove commands with wrong type from the list-copy with listeners to undelay
+                if(!commandType.isInstance(iterator.next().command)){
                     iterator.remove();
                 }
             }

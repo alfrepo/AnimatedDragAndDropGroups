@@ -6,6 +6,7 @@ import android.view.View;
 
 import junit.framework.Assert;
 
+import de.mine.experiments.R;
 import de.mine.experiments.anim.animatedgroup.Constants;
 import de.mine.experiments.anim.animatedgroup.UtilDropHandler;
 import de.mine.experiments.anim.animatedgroup.ViewDummyAnimated;
@@ -26,6 +27,8 @@ public class CommandReplaceView extends AbstractCommand {
     private View replaceIt;
     private View replaceBy;
 
+    private int initialHeightBeforeExpanding;
+
     /**
      * @param replaceIt
      * @param replaceBy the View should not have any parent, otherwise replacing wont work
@@ -37,6 +40,7 @@ public class CommandReplaceView extends AbstractCommand {
         this.replaceBy = replaceBy;
         this.replaceIt = replaceIt;
         this.context = context;
+        this.initialHeightBeforeExpanding = (int) replaceIt.getResources().getDimension(R.dimen.dummy_initial_before_expanding);
     }
 
     @Override
@@ -97,7 +101,7 @@ public class CommandReplaceView extends AbstractCommand {
 
 
         // grow the dummy to the size of replaceIt view
-        CommandGrowView commandGrowView = new CommandGrowView(viewDummyAnimated, heightReplaceByInNewParent , Constants.DUMMY_TIME_ANIMATION_DURATION_MS);
+        AbstractCommandModifyViewParameter commandGrowView = new CommandGrowViewHeight(viewDummyAnimated, initialHeightBeforeExpanding,  heightReplaceByInNewParent , Constants.DUMMY_TIME_ANIMATION_DURATION_MS);
         commandGrowView.execute();
 
         // now, when the dummy has reached the intended size - replace it by the replaceBy
