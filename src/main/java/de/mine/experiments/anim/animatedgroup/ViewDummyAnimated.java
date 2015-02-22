@@ -2,7 +2,6 @@ package de.mine.experiments.anim.animatedgroup;
 
 import android.content.ClipData;
 import android.content.Context;
-import android.graphics.Color;
 import android.util.Log;
 import android.view.DragEvent;
 import android.view.LayoutInflater;
@@ -42,8 +41,7 @@ public class ViewDummyAnimated extends View implements AbstractFigure, ViewGroup
 
 
     private void init(){
-        // TODO me de random BG
-        setRandomBg();
+        setInactiveBg();
 
         // every ViewGroup should have its own id
         setId(UUID.randomUUID().hashCode());
@@ -95,6 +93,15 @@ public class ViewDummyAnimated extends View implements AbstractFigure, ViewGroup
         if(event.getAction() == DragEvent.ACTION_DROP){
             Toast.makeText(getContext(), "drop", Toast.LENGTH_SHORT).show();
             onDropOnDummy(new DragEventDecorator(event));
+
+        }else if(event.getAction() == DragEvent.ACTION_DRAG_ENTERED){
+            setDragOverBg();
+
+        }else if(event.getAction() == DragEvent.ACTION_DRAG_EXITED){
+            setInactiveBg();
+
+        }else if(event.getAction() == DragEvent.ACTION_DRAG_ENDED){
+            setInactiveBg();
         }
 
         super.dispatchDragEvent(event);
@@ -126,10 +133,15 @@ public class ViewDummyAnimated extends View implements AbstractFigure, ViewGroup
         setMeasuredDimension(getMeasuredWidth(), getMeasuredHeight());
     }
 
-    private void setRandomBg(){
-        int r = ((int) (Math.random()*255)) ;
-        int g = ((int) (Math.random()*255)) ;
-        int b = ((int) (Math.random()*255)) ;
-        setBackgroundColor(Color.argb(255, r, g, b));
+    private void setInactiveBg(){
+//        int r = ((int) (Math.random()*255)) ;
+//        int g = ((int) (Math.random()*255)) ;
+//        int b = ((int) (Math.random()*255)) ;
+//        setBackgroundColor(Color.argb(255, r, g, b));
+        setBackgroundColor(getContext().getResources().getColor(android.R.color.secondary_text_dark));
+    }
+
+    private void setDragOverBg(){
+        setBackgroundColor(getContext().getResources().getColor(android.R.color.holo_orange_light));
     }
 }

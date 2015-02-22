@@ -106,9 +106,10 @@ public class CommandReplaceView extends AbstractCommand {
 
         // now, when the dummy has reached the intended size - replace it by the replaceBy
         final View finalTempreplaceBy = tempreplaceBy;
-        commandGrowView.addOnExecutionSucessfullyFinishedListener(new ListenerCommand() {
+        commandGrowView.addListenerCommand(new ListenerCommandAdapter() {
+
             @Override
-            public void onTrigger() {
+            public void onExecutionSucessfullyFinished() {
                 UtilDropHandler.replaceView(viewDummyAnimated, finalTempreplaceBy);
 
                 // notify that we are finished
@@ -118,8 +119,8 @@ public class CommandReplaceView extends AbstractCommand {
                 }else if(direction.equals(DIRECTION.UNDO)){
                     notifyOnUndoFinishsListener();
                 }
-
             }
+
         });
     }
 

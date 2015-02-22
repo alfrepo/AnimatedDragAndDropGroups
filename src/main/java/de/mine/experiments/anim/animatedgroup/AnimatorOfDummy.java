@@ -7,14 +7,17 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.view.ViewParent;
 
+import junit.framework.Assert;
+
 import java.util.ArrayList;
 import java.util.List;
 
 import de.mine.experiments.R;
 import de.mine.experiments.anim.animatedgroup.command.AbstractCommandModifyViewParameter;
-import de.mine.experiments.anim.animatedgroup.command.Command;
 import de.mine.experiments.anim.animatedgroup.command.CommandGrowViewHeight;
 import de.mine.experiments.anim.animatedgroup.command.CommandGrowViewParameters;
+import de.mine.experiments.anim.animatedgroup.command.IListenerCommand;
+import de.mine.experiments.anim.animatedgroup.command.ListenerCommandAdapter;
 
 /**
  * This class is needed, because the {@link de.mine.experiments.anim.animatedgroup.ViewItemAnimated} and {@link de.mine.experiments.anim.animatedgroup.ViewGroupAnimated}
@@ -54,6 +57,9 @@ public class AnimatorOfDummy implements IDragInViewIdentifier, View.OnDragListen
 
     // dragListeners which are registered on the dummy
     private List<View.OnDragListener> dummyOnDragListeners = new ArrayList<View.OnDragListener>();
+
+    // command listeners which are registered to the command which makes dummy expand
+    private List<IListenerCommand> commandExpandDummyListeners = new ArrayList<IListenerCommand>();
 
     // after which view should the dummy be appended
     private View predescessorView = null;
@@ -164,6 +170,7 @@ public class AnimatorOfDummy implements IDragInViewIdentifier, View.OnDragListen
         }else if(event.getAction() == DragEvent.ACTION_DRAG_ENTERED){
             Log.d(Constants.LOGD, "Drag in");
             onDragInAddDummyAnimation();
+
 
         } else if(event.getAction() == DragEvent.ACTION_DRAG_ENDED ){
             onDragEnded();
@@ -285,6 +292,24 @@ public class AnimatorOfDummy implements IDragInViewIdentifier, View.OnDragListen
 
     }
 
+    public void addCommandListener(IListenerCommand listenerCommand){
+        this.commandGrowView.addListenerCommand(listenerCommand);
+
+        // now add to the current command if available
+        if(commandGrowView != null){
+            commandGrowView.addListenerCommand(listenerCommand);
+        }
+    }
+
+    public void removeCommandListener(IListenerCommand listenerCommand){
+        this.commandGrowView.removeListenerCommand(listenerCommand);
+
+        // now remove from the current command if available
+        if(commandGrowView != null){
+            commandGrowView.removeListenerCommand(listenerCommand);
+        }
+    }
+
     // PRIVATE
 
     /**
@@ -313,14 +338,20 @@ public class AnimatorOfDummy implements IDragInViewIdentifier, View.OnDragListen
         this.predescessorView = predescessorView;
     }
 
+    private boolean isViewDummyExpanded(){
+        return ((this.viewDummyAnimated != null) &&
+                (viewDummyAnimated.getHeight() > INITIAL_DUMMY_HEIGHT_BEFORE_EXPANDING)) ||
+                (commandGrowView!=null && commandGrowView.isRunning());
+    }
 
     /** Creates a new dummy and initializes it into drag mode - notifyChildOfDrag
      */
     private void initDummy() {
+        Assert.assertNotNull(parentOfDummy);
         int parentWidth = parentOfDummy.getWidth();
 
         // create the dummy command if they are null
-        this.createDummyAndCommand(parentWidth);
+        this.createDummyAndCommand();
         Log.d(Constants.LOGD, "Width: " + parentWidth);
 
         /*  add the dummy to the group.
@@ -348,9 +379,11 @@ public class AnimatorOfDummy implements IDragInViewIdentifier, View.OnDragListen
         }
     }
 
-    private boolean createDummyAndCommand(int maxDummyWidth){
+    private boolean createDummyAndCommand(){
         // create the command if necessary
         if(viewDummyAnimated == null || commandGrowView == null){
+            Assert.assertNotNull(parentOfDummy);
+            int maxDummyWidth = parentOfDummy.getWidth();
 
             Log.d(Constants.LOGD, "createDummyAndCommand");
 
@@ -361,12 +394,17 @@ public class AnimatorOfDummy implements IDragInViewIdentifier, View.OnDragListen
             commandGrowView = new CommandGrowViewHeight(viewDummyAnimated, INITIAL_DUMMY_HEIGHT_BEFORE_EXPANDING, DUMMY_HEIGHT, DUMMY_ANIMATION_DURATION);
 
             // remove the dummy from the parent when the command undo is called
-            commandGrowView.addOnUndoFinishedListener(new Command.ListenerCommand() {
+            commandGrowView.addListenerCommand(new ListenerCommandAdapter() {
                 @Override
-                public void onTrigger() {
+                public void onUndoFinished() {
                     parentOfDummy.removeView(viewDummyAnimated);
                 }
             });
+
+            // add the rest of the listeners, which were added to the animator of dummy
+            for(IListenerCommand l:commandExpandDummyListeners){
+                commandGrowView.addListenerCommand(l);
+            }
 
             return true;
         }

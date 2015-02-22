@@ -1,6 +1,7 @@
 package de.mine.experiments.anim.animatedgroup;
 
 import android.content.ClipData;
+import android.graphics.Point;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -47,7 +48,14 @@ public class UtilDropHandler {
         // layout view according to sizes which were measured
         view.layout(0, 0, width, height);
         // now shadow builder may be created - the layout of the view will be alright
-        return new View.DragShadowBuilder(view);
+        return new View.DragShadowBuilder(view){
+            @Override
+            public void onProvideShadowMetrics(Point shadowSize, Point shadowTouchPoint) {
+                super.onProvideShadowMetrics(shadowSize, shadowTouchPoint);
+                // override the shadow positon to be under the finger
+                shadowTouchPoint.set(0,0);
+            }
+        };
     }
 
 

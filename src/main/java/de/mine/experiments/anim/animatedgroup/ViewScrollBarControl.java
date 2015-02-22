@@ -17,42 +17,44 @@ import de.mine.experiments.anim.animatedgroup.command.CommandGrowViewWidth;
 /**
  * Created by skip on 02.02.2015.
  */
-public class ViewScrollControl extends SurfaceView {
+public class ViewScrollBarControl extends SurfaceView {
 
     /*
         used to add an offset to the scroll control. It modifies the scroll position so that
         0% are reached a little bit (= offset) earlier than at the top and
         100% are reached a little bit (=offset) earlier that at the bottom
       */
-    public double SCROLL_CONTROL_UP_DOWN_OFFSET_PX = 40;
+    public double SCROLL_CONTROL_UP_DOWN_OFFSET_PX;
 
-    public int WIDTH_DRAG_OFF = 0;
-    public int WIDTH_MOUSE_OUT = 50;
-    public int WIDTH_MOUSE_OVER = 200;
+    public int WIDTH_DRAG_OFF = (int)getResources().getDimension(R.dimen.scrollcontrol_width_drag_off);
+    public int WIDTH_MOUSE_OUT = (int)getResources().getDimension(R.dimen.scrollcontrol_width_drag_out);
+    public int WIDTH_MOUSE_OVER = (int)getResources().getDimension(R.dimen.scrollcontrol_width_drag_over);
+    public int DURATION = Constants.SCROLL_CONTROL_ANIM_DURATION_MS;
 
     public double insensitiveDragZoneInPercent = 0.1;
     public long pauseBetweenSrollsMs = 100;
     public int scrollByPx = 150;
 
-    public CommandGrowViewWidth commandGrowViewWidth = new CommandGrowViewWidth(this, WIDTH_MOUSE_OVER, WIDTH_MOUSE_OVER);
+    public CommandGrowViewWidth commandGrowViewWidth = new CommandGrowViewWidth(this, WIDTH_MOUSE_OVER, WIDTH_MOUSE_OVER, DURATION);
 
     ScrollView scrollView;
     double heightScrollView;
+    double heightViewScrollBarControl;
     Float touchPosition = -99999f;
 
-    ScrollRunnable scrollRunnable = new ScrollRunnable();
+    ScrollRunnable scrollRunnable;
 
-    public ViewScrollControl(android.content.Context context) {
+    public ViewScrollBarControl(android.content.Context context) {
         super(context);
         init();
     }
 
-    public ViewScrollControl(android.content.Context context, AttributeSet attrs) {
+    public ViewScrollBarControl(android.content.Context context, AttributeSet attrs) {
         super(context, attrs);
         init();
     }
 
-    public ViewScrollControl(android.content.Context context, AttributeSet attrs, int defStyle) {
+    public ViewScrollBarControl(android.content.Context context, AttributeSet attrs, int defStyle) {
         super(context, attrs, defStyle);
         init();
     }
@@ -82,7 +84,9 @@ public class ViewScrollControl extends SurfaceView {
         scrollView.addOnLayoutChangeListener(new OnLayoutChangeListener() {
             @Override
             public void onLayoutChange(View v, int left, int top, int right, int bottom, int oldLeft, int oldTop, int oldRight, int oldBottom) {
-                heightScrollView  = scrollView.getMeasuredHeight();
+//                heightScrollView = scrollView.getChildAt(0).getMeasuredHeight();
+                heightScrollView = scrollView.getChildAt(0).getHeight() - scrollView.getHeight();
+                heightViewScrollBarControl = getMeasuredHeight();
             }
         });
     }
@@ -100,39 +104,37 @@ public class ViewScrollControl extends SurfaceView {
         }
 
         if(event.getAction() == DragEvent.ACTION_DRAG_STARTED){
-            Log.d("onTouch","ACTION_DRAG_STARTED");
-            scrollRunnable.isRunning = false;
-            scrollRunnable = new ScrollRunnable();
-            new Thread(scrollRunnable).start();
-
+            Log.d("ViewScrollBarControl","ACTION_DRAG_STARTED");
             Context.invoker.executeCommand(commandGrowViewWidth,
                     new CommandGrowViewParameters(AbstractCommandModifyViewParameter.Direction.EXECUTING).
                             setFinalValue(WIDTH_MOUSE_OUT));
 
         } else if(event.getAction() == DragEvent.ACTION_DRAG_ENDED){
-            scrollRunnable.isRunning = false;
+            Log.d("ViewScrollBarControl","ACTION_DRAG_ENDED");
+            stopScrolling();
 
-//            commandGrowViewWidth.setFinalValue(WIDTH_DRAG_OFF).execute();
             Context.invoker.executeCommand(commandGrowViewWidth,
                     new CommandGrowViewParameters(AbstractCommandModifyViewParameter.Direction.EXECUTING).
                             setFinalValue(WIDTH_DRAG_OFF).
                             setFallbackToThisValueWhenUndoing(WIDTH_DRAG_OFF));
 
         }else if(event.getAction() == DragEvent.ACTION_DRAG_ENTERED){
+            Log.d("ViewScrollBarControl","ACTION_DRAG_ENTERED");
             // grow view
             Context.invoker.executeCommand(commandGrowViewWidth,
                     new CommandGrowViewParameters(AbstractCommandModifyViewParameter.Direction.EXECUTING).
                             setFinalValue(WIDTH_MOUSE_OVER));
-
-            scrollRunnable.isRunning = false;
-            scrollRunnable = new ScrollRunnable();
-            new Thread(scrollRunnable).start();
+            startScrolling();
 
         }else if(event.getAction() == DragEvent.ACTION_DRAG_EXITED){
-            scrollRunnable.isRunning = false;
+            // stop on drag_exit is important, because otherwise the thread will chain the scrollposition to the current touchPosition
+            stopScrolling();
+
             Context.invoker.executeCommand(commandGrowViewWidth,
                     new CommandGrowViewParameters(AbstractCommandModifyViewParameter.Direction.EXECUTING).
                             setFinalValue(WIDTH_MOUSE_OUT));
+
+
 
         } else if(event.getAction() == DragEvent.ACTION_DRAG_LOCATION){
             synchronized (touchPosition){
@@ -145,6 +147,23 @@ public class ViewScrollControl extends SurfaceView {
 
     // private
 
+    private void stopScrolling(){
+        if(scrollRunnable != null){
+            Log.d(Constants.LOGD,"stopScrolling");
+            scrollRunnable.isRunning = false;
+            scrollRunnable = null;
+        }
+    }
+
+    private void startScrolling(){
+        stopScrolling();
+        if(scrollRunnable == null || scrollRunnable.isRunning == false){
+            Log.d(Constants.LOGD,"startScrolling");
+            scrollRunnable = new ScrollRunnable();
+            new Thread(scrollRunnable).start();
+        }
+    }
+
 
     private class ScrollRunnable implements Runnable{
         boolean isRunning = true;
@@ -153,20 +172,18 @@ public class ViewScrollControl extends SurfaceView {
         public void run() {
             while(isRunning){
                 try {
-                    Log.d("onTouch","Scrolling");
-
                     synchronized (touchPosition){
 
-                        if(touchPosition<0 || heightScrollView<touchPosition){
-                            return;
+                        if(touchPosition<0 || heightViewScrollBarControl<touchPosition){
+                            continue;
                         }
 
                         // compute the position percentage relative to height of scroll-control
                         double scrollToPosPercentage, scrollToPosPx;
-                        scrollToPosPercentage = (touchPosition - SCROLL_CONTROL_UP_DOWN_OFFSET_PX) / (heightScrollView-(2* SCROLL_CONTROL_UP_DOWN_OFFSET_PX));
+                        scrollToPosPercentage = (touchPosition - SCROLL_CONTROL_UP_DOWN_OFFSET_PX) / (heightViewScrollBarControl-(2* SCROLL_CONTROL_UP_DOWN_OFFSET_PX));
                         scrollToPosPx = heightScrollView * scrollToPosPercentage;
-                        scrollView.smoothScrollTo(0, (int)scrollToPosPx);
 
+                        scrollView.smoothScrollTo(0, (int)scrollToPosPx);
                     }
 
                     Thread.sleep(pauseBetweenSrollsMs);
@@ -176,4 +193,6 @@ public class ViewScrollControl extends SurfaceView {
             }
         }
     }
+
+
 }

@@ -45,14 +45,21 @@ public class ViewGroupAnimatedActivity6 extends Activity {
         Context.activity = this;
 
         // setup scroll control which would control the scrollView
-        ViewScrollControl scrollControl = (ViewScrollControl)findViewById(R.id.scrollControl);
         ScrollView scrollView = (ScrollView)findViewById(R.id.scrollviewMainContainer);
+        ViewScrollBarControl scrollControl = (ViewScrollBarControl)findViewById(R.id.scrollControl);
         scrollControl.set(scrollView);
+
+        ViewScrollAreaTopBottom scrollControlUp = (ViewScrollAreaTopBottom)findViewById(R.id.scrollControlUp);
+        scrollControlUp.set(scrollView, ViewScrollAreaTopBottom.ScrollDirection.UP);
+
+        ViewScrollAreaTopBottom scrollControlDown = (ViewScrollAreaTopBottom)findViewById(R.id.scrollControlDown);
+        scrollControlDown.set(scrollView, ViewScrollAreaTopBottom.ScrollDirection.DOWN);
 
         itemHeight = (int) getResources().getDimension(R.dimen.viewitem_fixed_height);
         dragshadowWidth = (int) getResources().getDimension(R.dimen.drag_shadow_width);
         viewGroupMinHeight = (int) getResources().getDimension(R.dimen.viewgroup_min_height);
     }
+
 
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {

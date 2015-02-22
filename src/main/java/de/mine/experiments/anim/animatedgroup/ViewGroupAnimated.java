@@ -9,6 +9,7 @@ import android.view.View;
 import android.view.ViewGroup;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.UUID;
 
@@ -273,7 +274,10 @@ public class ViewGroupAnimated extends ViewGroup implements AbstractViewGroup, V
         return null;
     }
 
-
+    @Override
+    public List<AnimatorOfDummy> getAllAnimatorOfDummy() {
+        return Arrays.asList(new AnimatorOfDummy[]{this.animatorOfDummyInsider, this.animatorOfDummyFollower});
+    }
 
     @Override
     public void onChildViewAdded(View parent, View child) {

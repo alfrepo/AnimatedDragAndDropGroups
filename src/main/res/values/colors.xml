@@ -1,5 +1,6 @@
 <resources>
 
     <color name="black_overlay">#80000000</color>
+    <color name="dummy_Color">#000000</color>
 
 </resources>

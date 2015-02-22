@@ -13,10 +13,11 @@ public class CommandsDelayFilterDrop extends CommandsDelayFilter {
         this.commandReplaceView = commandReplaceView;
 
         // listen for the commandReplaceView to be ready
-        commandReplaceView.addOnExecutionSucessfullyFinishedListener(
-            new Command.ListenerCommand() {
+        commandReplaceView.addListenerCommand(
+            new ListenerCommandAdapter() {
+
                 @Override
-                public void onTrigger() {
+                public void onExecutionSucessfullyFinished() {
                     // remove itself from the invoker
                     invoker.removeFilter(CommandsDelayFilterDrop.this);
 

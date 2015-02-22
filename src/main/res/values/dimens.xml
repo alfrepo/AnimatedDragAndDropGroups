@@ -28,6 +28,9 @@
     <dimen name="scrollcontrol_width_drag_out">30dp</dimen>
     <dimen name="scrollcontrol_width_drag_over">150dp</dimen>
     <dimen name="scrollcontrol_scroll_by">100dp</dimen>
-    <dimen name="scrollcontrol_up_down_offset">40dp</dimen>
+    <dimen name="scrollcontrol_up_down_offset">140dp</dimen>
+
+    <!-- scroll control -->
+    <dimen name="scrollview_up_down_offset">20dp</dimen>
 
 </resources>

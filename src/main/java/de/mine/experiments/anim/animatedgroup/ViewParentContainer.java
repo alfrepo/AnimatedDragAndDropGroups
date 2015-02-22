@@ -6,8 +6,12 @@ import android.view.DragEvent;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.LinearLayout;
+import android.widget.ScrollView;
 
+import java.util.Arrays;
 import java.util.List;
+
+import de.mine.experiments.R;
 
 /**
 * Created by skip on 27.09.2014.
@@ -41,13 +45,49 @@ public class ViewParentContainer extends LinearLayout implements AbstractViewGro
 
     // ENFORCE OnHierarchyChangeListener as children
 
+
+    ViewDummyAnimated lastDummy = null;
+    OnLayoutChangeListener lastDummyListener = null;
     @Override
-    public void addView(View child) {
+    public void addView(final View child, int index, ViewGroup.LayoutParams params) {
+
         // check whether the view implements the OnHierarchyChangeListener
         if(!(child instanceof  OnHierarchyChangeListener)){
             throw new IllegalArgumentException(String.format("The child %s has to implemement OnHierarchyChangeListener", child.getClass().getSimpleName()));
         }
-        super.addView(child);
+        super.addView(child, index, params);
+
+
+        // add listener which would listen for dummy expansion in last item
+        // check whether this one is a dummy
+        if(child instanceof ViewDummyAnimated){
+
+            // check whether this one is the last child
+            boolean isNewLastChild = Utils.getViewIndexInParent(child) == getChildCount()-1;
+            if(isNewLastChild){
+
+                // unregister the dummy listener on the previous one
+                if(lastDummy != null ){
+                    lastDummy.removeOnLayoutChangeListener(lastDummyListener);
+                }
+
+                // find the scrollView
+                final ScrollView scrollView = (ScrollView)de.mine.experiments.anim.animatedgroup.Context.activity.findViewById((R.id.scrollviewMainContainer));
+
+                // register the layout listener on the new one
+                lastDummy = (ViewDummyAnimated) child;
+
+                // when the dummy height changes - make the scrollView completely display the dummy
+                lastDummyListener = new OnLayoutChangeListener() {
+                    @Override
+                    public void onLayoutChange(View v, int left, int top, int right, int bottom, int oldLeft, int oldTop, int oldRight, int oldBottom) {
+                            int y = child.getBottom();
+                            scrollView.scrollTo(scrollView.getScrollX(), y);
+                    }
+                };
+                lastDummy.addOnLayoutChangeListener(lastDummyListener);
+            }
+        }
     }
 
 
@@ -128,6 +168,11 @@ public class ViewParentContainer extends LinearLayout implements AbstractViewGro
             return animatorOfDummyInsider;
         }
         return null;
+    }
+
+    @Override
+    public List<AnimatorOfDummy> getAllAnimatorOfDummy() {
+        return Arrays.asList(new AnimatorOfDummy[]{this.animatorOfDummyInsider});
     }
 
     // ViewGroup.OnHierarchyChangeListener

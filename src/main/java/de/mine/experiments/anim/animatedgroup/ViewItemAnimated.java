@@ -11,6 +11,8 @@ import android.widget.ImageView;
 import android.widget.RelativeLayout;
 import android.widget.TextView;
 
+import java.util.Arrays;
+import java.util.List;
 import java.util.UUID;
 
 import de.mine.experiments.R;
@@ -143,6 +145,10 @@ public class ViewItemAnimated extends RelativeLayout implements AbstractFigure, 
         }
 
         return  null;
+    }
+    @Override
+    public List<AnimatorOfDummy> getAllAnimatorOfDummy() {
+        return Arrays.asList(new AnimatorOfDummy[]{this.animatorOfDummy});
     }
 
     private void onDragOutRemoveDummyAnimation(){
