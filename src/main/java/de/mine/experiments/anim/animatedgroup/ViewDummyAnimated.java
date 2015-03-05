@@ -11,6 +11,7 @@ import android.widget.Toast;
 
 import java.util.UUID;
 
+import de.mine.experiments.R;
 import de.mine.experiments.anim.animatedgroup.command.CommandReplaceView;
 import de.mine.experiments.anim.animatedgroup.command.CommandReplaceViewParameters;
 import de.mine.experiments.anim.animatedgroup.command.CommandsDelayFilterDrop;
@@ -138,10 +139,10 @@ public class ViewDummyAnimated extends View implements AbstractFigure, ViewGroup
 //        int g = ((int) (Math.random()*255)) ;
 //        int b = ((int) (Math.random()*255)) ;
 //        setBackgroundColor(Color.argb(255, r, g, b));
-        setBackgroundColor(getContext().getResources().getColor(android.R.color.secondary_text_dark));
+        setBackgroundColor(getContext().getResources().getColor(R.color.dummy_color_inactive));
     }
 
     private void setDragOverBg(){
-        setBackgroundColor(getContext().getResources().getColor(android.R.color.holo_orange_light));
+        setBackgroundColor(getContext().getResources().getColor(R.color.dummy_color_active));
     }
 }
