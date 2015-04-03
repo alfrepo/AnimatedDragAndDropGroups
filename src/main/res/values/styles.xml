@@ -21,6 +21,14 @@
         <item name="android:background">@android:drawable/bottom_bar</item>
     </style>
 
+    <style name="ViewParentMain">
+        <item name="android:layout_marginTop">10px</item>
+    </style>
+
+    <style name="ViewParentArchive">
+        <item name="android:layout_marginTop">10px</item>
+    </style>
+
     <style name="ButtonBarButton" />
 
 </resources>

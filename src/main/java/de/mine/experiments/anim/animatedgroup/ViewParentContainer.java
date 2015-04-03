@@ -1,6 +1,7 @@
 package de.mine.experiments.anim.animatedgroup;
 
 import android.content.Context;
+import android.content.res.TypedArray;
 import android.util.AttributeSet;
 import android.view.DragEvent;
 import android.view.View;
@@ -19,25 +20,31 @@ import de.mine.experiments.R;
 public class ViewParentContainer extends LinearLayout implements AbstractViewGroup, IDummyContainer, ViewGroup.OnHierarchyChangeListener{
 
     AnimatorOfDummy animatorOfDummyInsider;
+    int mParentTopMargins = 0;
 
     public ViewParentContainer(Context context) {
         super(context);
-        init();
+        init(null);
     }
 
     public ViewParentContainer(Context context, AttributeSet attrs) {
         super(context, attrs);
-        init();
+        init(attrs);
     }
 
     public ViewParentContainer(Context context, AttributeSet attrs, int defStyle) {
         super(context, attrs, defStyle);
-        init();
+        init(attrs);
     }
 
-    private void init(){
+    private void init(AttributeSet attrs){
+        if(attrs != null){
+            TypedArray array = getContext().obtainStyledAttributes(attrs, R.styleable.ViewParentContainer);
+            this.mParentTopMargins = array.getInteger(R.styleable.ViewParentContainer_childMarginsTop, mParentTopMargins);
+        }
+
         // pass the information about additon of new Children to the children themselves if they implement OnHierarchyChangeListener
-        this.setOnHierarchyChangeListener(Utils.getOnHierarchyChangeListenerWhichNotifiesChildren());
+        this.setOnHierarchyChangeListener(this);
 
         // create the dummy with this as parent
         animatorOfDummyInsider = new AnimatorOfDummy(getContext(), this);
@@ -72,7 +79,7 @@ public class ViewParentContainer extends LinearLayout implements AbstractViewGro
                 }
 
                 // find the scrollView
-                final ScrollView scrollView = (ScrollView)de.mine.experiments.anim.animatedgroup.Context.activity.findViewById((R.id.scrollviewMainContainer));
+                final ScrollView scrollView = (ScrollView)de.mine.experiments.anim.animatedgroup.Context.activity.findViewById((R.id.scrollviewMain));
 
                 // register the layout listener on the new one
                 lastDummy = (ViewDummyAnimated) child;
@@ -181,10 +188,15 @@ public class ViewParentContainer extends LinearLayout implements AbstractViewGro
     @Override
     public void onChildViewAdded(View parent, View child) {
         ((OnHierarchyChangeListener)child).onChildViewAdded(parent, child);
+
+        // add the topMargin
+        ((LayoutParams)child.getLayoutParams()).setMargins(0, mParentTopMargins, 0, 0);
     }
 
     @Override
     public void onChildViewRemoved(View parent, View child) {
         ((OnHierarchyChangeListener)child).onChildViewRemoved(parent, child);
+
+        // remove the topMargin
     }
 }

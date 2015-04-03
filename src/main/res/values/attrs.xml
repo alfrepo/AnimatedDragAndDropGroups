@@ -9,4 +9,9 @@
         <attr name="metaButtonBarButtonStyle" format="reference" />
     </declare-styleable>
 
+    <!-- cusom xml tag to set the padding for the children -->
+    <declare-styleable name="ViewParentContainer">
+        <attr name="childMarginsTop" format="integer" />
+    </declare-styleable>
+
 </resources>

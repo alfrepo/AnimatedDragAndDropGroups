@@ -58,7 +58,7 @@ public class ViewGroupAnimated extends ViewGroup implements AbstractViewGroup, V
         this.context = context;
 
         // pass the information about additon of new Children to the children themselves if they implement OnHierarchyChangeListener
-        this.setOnHierarchyChangeListener(Utils.getOnHierarchyChangeListenerWhichNotifiesChildren());
+        this.setOnHierarchyChangeListener(this);
 
         // dummy insider - the parent is this
         this.animatorOfDummyInsider = new AnimatorOfDummy(context, this);

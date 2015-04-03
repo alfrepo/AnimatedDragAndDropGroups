@@ -36,7 +36,7 @@ public class ViewGroupAnimatedActivity6 extends Activity {
     }
 
     void init() {
-        linearLayout = (LinearLayout) findViewById(R.id.linearLayoutGroups);
+        linearLayout = (LinearLayout) findViewById(R.id.parentContainerMain);
         viewGroupAnimated = (ViewGroupAnimated) findViewById(R.id.group2);
         topMostContainer = (ViewGroup)findViewById(R.id.topMostContainer);
 
@@ -44,20 +44,31 @@ public class ViewGroupAnimatedActivity6 extends Activity {
         Context.invoker = new Invoker(this);
         Context.activity = this;
 
-        // setup scroll control which would control the scrollView
-        ScrollView scrollView = (ScrollView)findViewById(R.id.scrollviewMainContainer);
-        ViewScrollBarControl scrollControl = (ViewScrollBarControl)findViewById(R.id.scrollControl);
-        scrollControl.set(scrollView);
+        // setup scroll control which would control the main scrollView
+        ScrollView scrollViewMain = (ScrollView)findViewById(R.id.scrollviewMain);
+        ViewScrollBarControl scrollControlMain = (ViewScrollBarControl)findViewById(R.id.scrollBarControlMain);
+        ViewScrollAreaTopBottom scrollControlUpMain = (ViewScrollAreaTopBottom)findViewById(R.id.scrollControlTopMain);
+        ViewScrollAreaTopBottom scrollControlDownMain = (ViewScrollAreaTopBottom)findViewById(R.id.scrollControlBottomMain);
 
-        ViewScrollAreaTopBottom scrollControlUp = (ViewScrollAreaTopBottom)findViewById(R.id.scrollControlUp);
-        scrollControlUp.set(scrollView, ViewScrollAreaTopBottom.ScrollDirection.UP);
+        setUpScrollControls(scrollViewMain, scrollControlMain, scrollControlUpMain, scrollControlDownMain);
 
-        ViewScrollAreaTopBottom scrollControlDown = (ViewScrollAreaTopBottom)findViewById(R.id.scrollControlDown);
-        scrollControlDown.set(scrollView, ViewScrollAreaTopBottom.ScrollDirection.DOWN);
+        // setup scroll control which would control the archive scrollView
+        ScrollView scrollViewArchive = (ScrollView)findViewById(R.id.scrollViewArchive);
+        ViewScrollBarControl scrollControlArchive = (ViewScrollBarControl)findViewById(R.id.scrollBarControlArchive);
+        ViewScrollAreaTopBottom scrollControlUpArchive = (ViewScrollAreaTopBottom)findViewById(R.id.scrollControlTopArchive);
+        ViewScrollAreaTopBottom scrollControlDownArchive = (ViewScrollAreaTopBottom)findViewById(R.id.scrollControlBottomArchive);
+
+        setUpScrollControls(scrollViewArchive, scrollControlArchive, scrollControlUpArchive, scrollControlDownArchive);
 
         itemHeight = (int) getResources().getDimension(R.dimen.viewitem_fixed_height);
         dragshadowWidth = (int) getResources().getDimension(R.dimen.drag_shadow_width);
         viewGroupMinHeight = (int) getResources().getDimension(R.dimen.viewgroup_min_height);
+    }
+
+    private void setUpScrollControls(ScrollView scrollView, ViewScrollBarControl scrollControl, ViewScrollAreaTopBottom scrollControlUp, ViewScrollAreaTopBottom scrollControlDown) {
+        scrollControl.set(scrollView);
+        scrollControlUp.set(scrollView, ViewScrollAreaTopBottom.ScrollDirection.UP);
+        scrollControlDown.set(scrollView, ViewScrollAreaTopBottom.ScrollDirection.DOWN);
     }
 
 
